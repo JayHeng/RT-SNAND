@@ -11,6 +11,7 @@
 #include "pin_mux.h"
 #include "clock_config.h"
 #include "board.h"
+#include "snand.h"
 
 /*******************************************************************************
  * Definitions
@@ -29,8 +30,6 @@
  */
 int main(void)
 {
-    char ch;
-
     /* Init board hardware. */
     BOARD_ConfigMPU();
     BOARD_InitBootPins();
@@ -41,11 +40,12 @@ int main(void)
     SystemCoreClockUpdate();
     CLOCK_EnableClock(kCLOCK_Trace);
 
-    PRINTF("hello world.\r\n");
+    snand_printf("\r\nSNAND: Target i.MXRT1050.\r\n");
+    snand_printf("\r\n-------------------------------------\r\n");
+    snand_main();
+    snand_printf("-------------------------------------\r\n");
 
     while (1)
     {
-        ch = GETCHAR();
-        PUTCHAR(ch);
     }
 }

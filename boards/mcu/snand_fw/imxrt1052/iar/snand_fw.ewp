@@ -40,7 +40,7 @@
                 </option>
                 <option>
                     <name>Output description</name>
-                    <state>No specifier n, no float nor long long, no scan set, no assignment suppressing, without multibyte support.</state>
+                    <state>No specifier a, A, no specifier n, no float nor long long, without multibyte support.</state>
                 </option>
                 <option>
                     <name>GOutputBinary</name>
@@ -62,7 +62,7 @@
                 </option>
                 <option>
                     <name>RTDescription</name>
-                    <state>0</state>
+                    <state>A compact configuration of the C/C++14 runtime library. No locale interface, C locale, no file descriptor support, no multibytes in printf and scanf, and no hex floats in strtod.</state>
                 </option>
                 <option>
                     <name>OGProductVersion</name>
@@ -355,6 +355,7 @@
                 <option>
                     <name>CCIncludePath2</name>
                     <state>$PROJ_DIR$/..</state>
+                    <state>$PROJ_DIR$/../../src</state>
                     <state>$PROJ_DIR$/../../../../../devices/MIMXRT1052/utilities/str</state>
                     <state>$PROJ_DIR$/../../../../../devices/MIMXRT1052/utilities/debug_console_lite</state>
                     <state>$PROJ_DIR$/../../../../../devices/MIMXRT1052/drivers</state>
@@ -1457,6 +1458,7 @@
                 <option>
                     <name>CCIncludePath2</name>
                     <state>$PROJ_DIR$/..</state>
+                    <state>$PROJ_DIR$/../../src</state>
                     <state>$PROJ_DIR$/../../../../../devices/MIMXRT1052/utilities/str</state>
                     <state>$PROJ_DIR$/../../../../../devices/MIMXRT1052/utilities/debug_console_lite</state>
                     <state>$PROJ_DIR$/../../../../../devices/MIMXRT1052/drivers</state>
@@ -2557,6 +2559,7 @@
                 <option>
                     <name>CCIncludePath2</name>
                     <state>$PROJ_DIR$/..</state>
+                    <state>$PROJ_DIR$/../../src</state>
                     <state>$PROJ_DIR$/../../../../../devices/MIMXRT1052/utilities/str</state>
                     <state>$PROJ_DIR$/../../../../../devices/MIMXRT1052/utilities/debug_console_lite</state>
                     <state>$PROJ_DIR$/../../../../../devices/MIMXRT1052/drivers</state>
@@ -3482,7 +3485,7 @@
                 </option>
                 <option>
                     <name>DSPExtension</name>
-                    <state>0</state>
+                    <state>1</state>
                 </option>
                 <option>
                     <name>TrustZone</name>
@@ -3657,6 +3660,7 @@
                 <option>
                     <name>CCIncludePath2</name>
                     <state>$PROJ_DIR$/..</state>
+                    <state>$PROJ_DIR$/../../src</state>
                     <state>$PROJ_DIR$/../../../../../devices/MIMXRT1052/utilities/str</state>
                     <state>$PROJ_DIR$/../../../../../devices/MIMXRT1052/utilities/debug_console_lite</state>
                     <state>$PROJ_DIR$/../../../../../devices/MIMXRT1052/drivers</state>
@@ -3690,7 +3694,7 @@
                 </option>
                 <option>
                     <name>CCOptLevelSlave</name>
-                    <state>1</state>
+                    <state>3</state>
                 </option>
                 <option>
                     <name>CCPosIndRopi</name>
@@ -4759,6 +4763,7 @@
                 <option>
                     <name>CCIncludePath2</name>
                     <state>$PROJ_DIR$/..</state>
+                    <state>$PROJ_DIR$/../../src</state>
                     <state>$PROJ_DIR$/../../../../../devices/MIMXRT1052/utilities/str</state>
                     <state>$PROJ_DIR$/../../../../../devices/MIMXRT1052/utilities/debug_console_lite</state>
                     <state>$PROJ_DIR$/../../../../../devices/MIMXRT1052/drivers</state>
@@ -5684,7 +5689,7 @@
                 </option>
                 <option>
                     <name>DSPExtension</name>
-                    <state>0</state>
+                    <state>1</state>
                 </option>
                 <option>
                     <name>TrustZone</name>
@@ -5859,6 +5864,7 @@
                 <option>
                     <name>CCIncludePath2</name>
                     <state>$PROJ_DIR$/..</state>
+                    <state>$PROJ_DIR$/../../src</state>
                     <state>$PROJ_DIR$/../../../../../devices/MIMXRT1052/utilities/str</state>
                     <state>$PROJ_DIR$/../../../../../devices/MIMXRT1052/utilities/debug_console_lite</state>
                     <state>$PROJ_DIR$/../../../../../devices/MIMXRT1052/drivers</state>
@@ -5892,7 +5898,7 @@
                 </option>
                 <option>
                     <name>CCOptLevelSlave</name>
-                    <state>1</state>
+                    <state>3</state>
                 </option>
                 <option>
                     <name>CCPosIndRopi</name>
@@ -6625,6 +6631,9 @@
         <file>
             <name>$PROJ_DIR$\..\pin_mux.h</name>
         </file>
+        <file>
+            <name>$PROJ_DIR$\..\port_mixspi_info.h</name>
+        </file>
     </group>
     <group>
         <name>CMSIS</name>
@@ -6687,12 +6696,6 @@
         </file>
     </group>
     <group>
-        <name>doc</name>
-        <file>
-            <name>$PROJ_DIR$\..\readme.txt</name>
-        </file>
-    </group>
-    <group>
         <name>drivers</name>
         <file>
             <name>$PROJ_DIR$\..\..\..\..\..\devices\MIMXRT1052\drivers\fsl_clock.c</name>
@@ -6732,6 +6735,24 @@
         <name>source</name>
         <file>
             <name>$PROJ_DIR$\..\main.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\src\snand.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\src\snand.h</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\src\snand_adapter.h</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\src\snand_config.h</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\src\snand_define.h</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\src\snand_flash.h</name>
         </file>
     </group>
     <group>
