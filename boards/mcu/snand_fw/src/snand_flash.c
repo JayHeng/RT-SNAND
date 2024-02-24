@@ -87,7 +87,7 @@ static const uint32_t s_read_ecc_status_lut[4] = {
 ////////////////////////////////////////////////////////////////////////////////
 
 //!@brief Configure clock for FlexSPI peripheral
-void flexspi_clock_config(uint32_t instance, uint32_t freq, uint32_t sampleClkMode)
+void flexspi_clock_config(FLEXSPI_Type *base, uint32_t freq, uint32_t sampleClkMode)
 {
     uint32_t pfd480 = 0;
     uint32_t cscmr1 = 0;
@@ -146,7 +146,7 @@ void flexspi_clock_config(uint32_t instance, uint32_t freq, uint32_t sampleClkMo
             cscmr1 |= CCM_CSCMR1_FLEXSPI_PODF(podf - 1);
 
             FLEXSPI->MCR0 |= FLEXSPI_MCR0_MDIS_MASK;
-            flexspi_clock_gate_disable(instance);
+            flexspi_clock_gate_disable(base);
 
             if (pfd480 != CCM_ANALOG->PFD_480)
             {
@@ -156,7 +156,7 @@ void flexspi_clock_config(uint32_t instance, uint32_t freq, uint32_t sampleClkMo
             {
                 CCM->CSCMR1 = cscmr1;
             }
-            flexspi_clock_gate_enable(instance);
+            flexspi_clock_gate_enable(base);
             FLEXSPI->MCR0 &= ~FLEXSPI_MCR0_MDIS_MASK;
         }
         else
@@ -167,13 +167,13 @@ void flexspi_clock_config(uint32_t instance, uint32_t freq, uint32_t sampleClkMo
 }
 
 //!@brief Gate on the clock for the FlexSPI peripheral
-void flexspi_clock_gate_enable(uint32_t instance)
+void flexspi_clock_gate_enable(FLEXSPI_Type *base)
 {
     CCM->CCGR6 |= CCM_CCGR6_CG5_MASK;
 }
 
 //!@brief Gate off the clock the FlexSPI peripheral
-void flexspi_clock_gate_disable(uint32_t instance)
+void flexspi_clock_gate_disable(FLEXSPI_Type *base)
 {
     CCM->CCGR6 &= (uint32_t)~CCM_CCGR6_CG5_MASK;
 }
@@ -220,12 +220,12 @@ status_t flexspi_set_failsafe_setting(flexspi_mem_config_t *config)
 }
 
 // Get max supported Frequency in this SoC
-status_t flexspi_get_max_supported_freq(uint32_t instance, uint32_t *freq, uint32_t clkMode)
+status_t flexspi_get_max_supported_freq(FLEXSPI_Type *base, uint32_t *freq, uint32_t clkMode)
 {
     status_t status = kStatus_InvalidArgument;
     do
     {
-        if ((instance != 0) || (freq == NULL))
+        if ((base != NULL) || (freq == NULL))
         {
             break;
         }
@@ -247,7 +247,7 @@ status_t flexspi_get_max_supported_freq(uint32_t instance, uint32_t *freq, uint3
 }
 
 //!@brief Get Clock for FlexSPI peripheral
-status_t flexspi_get_clock(uint32_t instance, flexspi_clock_type_t type, uint32_t *freq)
+status_t flexspi_get_clock(FLEXSPI_Type *base, flexspi_clock_type_t type, uint32_t *freq)
 {
     uint32_t clockFrequency = 0;
     status_t status = kStatus_Success;

@@ -299,49 +299,49 @@ extern "C"
 #endif
 
     //!@brief Initialize FlexSPI
-    status_t flexspi_init(uint32_t instance, flexspi_mem_config_t *config);
+    status_t flexspi_init(FLEXSPI_Type *base, flexspi_mem_config_t *config);
 
     //!@brief Send Write enable command to Serial Memory device
-    status_t flexspi_device_write_enable(uint32_t instance,
+    status_t flexspi_device_write_enable(FLEXSPI_Type *base,
                                          flexspi_mem_config_t *config,
                                          bool isParallelMode,
                                          uint32_t baseAddr);
 
     //!@brief Wait until device is idle
-    status_t flexspi_device_wait_busy(uint32_t instance,
+    status_t flexspi_device_wait_busy(FLEXSPI_Type *base,
                                       flexspi_mem_config_t *config,
                                       bool isParallelMode,
                                       uint32_t baseAddr);
 
     //!@brief Configure FlexSPI Lookup table
-    status_t flexspi_update_lut(uint32_t instance, uint32_t seqIndex, const uint32_t *lutBase, uint32_t numberOfSeq);
+    status_t flexspi_update_lut(FLEXSPI_Type *base, uint32_t seqIndex, const uint32_t *lutBase, uint32_t numberOfSeq);
 
     //!@brief Perform FlexSPI command
-    status_t flexspi_command_xfer(uint32_t instance, flexspi_xfer_t *xfer);
+    status_t flexspi_command_xfer(FLEXSPI_Type *base, flexspi_xfer_t *xfer);
 
     //!@brief Get FlexSPI Clock frequency
-    extern status_t flexspi_get_clock(uint32_t instance, flexspi_clock_type_t type, uint32_t *freq);
+    extern status_t flexspi_get_clock(FLEXSPI_Type *base, flexspi_clock_type_t type, uint32_t *freq);
 
     //!@brief Wait until FlexSPI controller becomes idle
-    void flexspi_wait_idle(uint32_t instance);
+    void flexspi_wait_idle(FLEXSPI_Type *base);
 
     //!@brief Clear FlexSPI cache
-    void flexspi_clear_cache(uint32_t instance);
+    void flexspi_clear_cache(FLEXSPI_Type *base);
 
     //!@brief Clear FlexSPI sequence pointer
-    void flexspi_clear_sequence_pointer(uint32_t instance);
+    void flexspi_clear_sequence_pointer(FLEXSPI_Type *base);
 
     //!@brief Enable clock gate of FlexSPI
-    extern void flexspi_clock_gate_enable(uint32_t instance);
+    extern void flexspi_clock_gate_enable(FLEXSPI_Type *base);
 
     //!@brief Disable clock gate of FlexSPI
-    extern void flexspi_clock_gate_disable(uint32_t instance);
+    extern void flexspi_clock_gate_disable(FLEXSPI_Type *base);
 
     //!@brief Configure IOMUX for FlexSPI
-    extern void flexspi_iomux_config(uint32_t instance, flexspi_mem_config_t *config);
+    extern void flexspi_iomux_config(FLEXSPI_Type *base, flexspi_mem_config_t *config);
 
     //!@brief Configure Clock for FlexSPI
-    extern void flexspi_clock_config(uint32_t instance, uint32_t freq, uint32_t sampleClkMode);
+    extern void flexspi_clock_config(FLEXSPI_Type *base, uint32_t freq, uint32_t sampleClkMode);
 
     //!@brief Check whether Pad Setting Override feature is enabled.
     bool flexspi_is_padsetting_override_enable(flexspi_mem_config_t *config);
@@ -362,16 +362,16 @@ extern "C"
     bool flexspi_is_word_addressable(flexspi_mem_config_t *config);
 
     //!@brief Configure FlexSPI DLL register
-    status_t flexspi_configure_dll(uint32_t instance, flexspi_mem_config_t *config);
+    status_t flexspi_configure_dll(FLEXSPI_Type *base, flexspi_mem_config_t *config);
 
     //!@brief Half FlexSPI Clock
-    void flexspi_half_clock_control(uint32_t instance, uint32_t option);
+    void flexspi_half_clock_control(FLEXSPI_Type *base, uint32_t option);
 
     //!@brief Set Failfase setting info
     extern status_t flexspi_set_failsafe_setting(flexspi_mem_config_t *config);
 
     //!@brief Get Maximumn clock frequency
-    extern status_t flexspi_get_max_supported_freq(uint32_t instance, uint32_t *freq, uint32_t clkMode);
+    extern status_t flexspi_get_max_supported_freq(FLEXSPI_Type *base, uint32_t *freq, uint32_t clkMode);
 
 //    extern void flexspi_sw_delay_us(uint64_t us);
 

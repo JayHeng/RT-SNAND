@@ -40,48 +40,30 @@ enum
 ////////////////////////////////////////////////////////////////////////////////
 // Local variables
 ////////////////////////////////////////////////////////////////////////////////
-#ifdef FLEXSPI_AMBA_BASE_ADDS
-static const uint32_t kFlexSpiAmbaBase[] = FLEXSPI_AMBA_BASE_ADDS;
-#else
-#if FSL_FEATURE_SOC_FLEXSPI_COUNT > 1
-#if defined(FlexSPI0_AMBA_BASE)
-static const uint32_t kFlexSpiAmbaBase[] = { FlexSPI0_AMBA_BASE, FlexSPI1_AMBA_BASE };
-#elif defined(FlexSPI_AMBA_BASE)
-static const uint32_t kFlexSpiAmbaBase[] = { 0, FlexSPI_AMBA_BASE, FlexSPI2_AMBA_BASE };
-#else
-static const uint32_t kFlexSpiAmbaBase[] = { 0, FlexSPI1_AMBA_BASE, FlexSPI2_AMBA_BASE };
-#endif // #if defined(FlexSPI0_AMBA_BASE)
-#else
-#if defined(FlexSPI0_AMBA_BASE)
-static const uint32_t kFlexSpiAmbaBase[] = { FlexSPI0_AMBA_BASE };
-#else
-static const uint32_t kFlexSpiAmbaBase[] = { FlexSPI_AMBA_BASE };
-#endif // #if defined(FlexSPI0_AMBA_BASE)
-#endif // #if FSL_FEATURE_SOC_FLEXSPI_COUNT > 1
-#endif // #ifdef FLEXSPI_AMBA_BASE_ADDS
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // Local prototypes
 ////////////////////////////////////////////////////////////////////////////////
 // NAND Check ECC status
-static status_t flexspi_nand_check_ecc_status(uint32_t instance,
+static status_t flexspi_nand_check_ecc_status(FLEXSPI_Type *base,
                                               flexspi_nand_config_t *config,
                                               uint32_t baseAddress,
                                               bool *isPassed);
 // NAND Write Enable
-static status_t flexspi_nand_write_enable(uint32_t instance, flexspi_nand_config_t *config, uint32_t baseAddress);
+static status_t flexspi_nand_write_enable(FLEXSPI_Type *base, flexspi_nand_config_t *config, uint32_t baseAddress);
 
 // NAND Check ID
-static status_t flexspi_nand_verify_id(uint32_t instance, serial_nand_config_option_t *option);
+static status_t flexspi_nand_verify_id(FLEXSPI_Type *base, serial_nand_config_option_t *option);
 
 // Check Error status
-static status_t flexspi_nand_check_error_status(uint32_t instance, flexspi_nand_config_t *config, uint32_t baseAddress);
+static status_t flexspi_nand_check_error_status(FLEXSPI_Type *base, flexspi_nand_config_t *config, uint32_t baseAddress);
 
 ////////////////////////////////////////////////////////////////////////////////
 // Codes
 ////////////////////////////////////////////////////////////////////////////////
 
-status_t flexspi_nand_check_ecc_status(uint32_t instance,
+status_t flexspi_nand_check_ecc_status(FLEXSPI_Type *base,
                                        flexspi_nand_config_t *config,
                                        uint32_t baseAddress,
                                        bool *isCheckPassed)
@@ -112,10 +94,10 @@ status_t flexspi_nand_check_ecc_status(uint32_t instance,
         flashXfer.rxSize = 4;
 
         *isCheckPassed = false;
-        flexspi_update_lut(instance, NAND_CMD_LUT_FOR_IP_CMD, &config->memConfig.lookupTable[4 * flashXfer.seqId],
+        flexspi_update_lut(base, NAND_CMD_LUT_FOR_IP_CMD, &config->memConfig.lookupTable[4 * flashXfer.seqId],
                            flashXfer.seqNum);
         flashXfer.seqId = NAND_CMD_LUT_FOR_IP_CMD;
-        status = flexspi_command_xfer(instance, &flashXfer);
+        status = flexspi_command_xfer(base, &flashXfer);
         if (status == kStatus_Success)
         {
             if (config->eccCheckCustomEnable)
@@ -138,7 +120,7 @@ status_t flexspi_nand_check_ecc_status(uint32_t instance,
     return status;
 }
 
-status_t flexspi_nand_check_error_status(uint32_t instance, flexspi_nand_config_t *config, uint32_t baseAddress)
+status_t flexspi_nand_check_error_status(FLEXSPI_Type *base, flexspi_nand_config_t *config, uint32_t baseAddress)
 {
     status_t status = kStatus_InvalidArgument;
 
@@ -159,10 +141,10 @@ status_t flexspi_nand_check_error_status(uint32_t instance, flexspi_nand_config_
         flashXfer.rxBuffer = &statusRegister;
         flashXfer.rxSize = 4;
 
-        flexspi_update_lut(instance, NAND_CMD_LUT_FOR_IP_CMD, &config->memConfig.lookupTable[4 * flashXfer.seqId],
+        flexspi_update_lut(base, NAND_CMD_LUT_FOR_IP_CMD, &config->memConfig.lookupTable[4 * flashXfer.seqId],
                            flashXfer.seqNum);
         flashXfer.seqId = NAND_CMD_LUT_FOR_IP_CMD;
-        status = flexspi_command_xfer(instance, &flashXfer);
+        status = flexspi_command_xfer(base, &flashXfer);
         if (status != kStatus_Success)
         {
             break;
@@ -187,12 +169,12 @@ status_t flexspi_nand_check_error_status(uint32_t instance, flexspi_nand_config_
     return status;
 }
 
-status_t flexspi_nand_write_enable(uint32_t instance, flexspi_nand_config_t *config, uint32_t baseAddress)
+status_t flexspi_nand_write_enable(FLEXSPI_Type *base, flexspi_nand_config_t *config, uint32_t baseAddress)
 {
-    return flexspi_device_write_enable(instance, &config->memConfig, false, baseAddress);
+    return flexspi_device_write_enable(base, &config->memConfig, false, baseAddress);
 }
 
-status_t flexspi_nand_init(uint32_t instance, flexspi_nand_config_t *config)
+status_t flexspi_nand_init(FLEXSPI_Type *base, flexspi_nand_config_t *config)
 {
     status_t status = kStatus_InvalidArgument;
 
@@ -202,19 +184,19 @@ status_t flexspi_nand_init(uint32_t instance, flexspi_nand_config_t *config)
         {
             break;
         }
-        status = flexspi_init(instance, &config->memConfig);
+        status = flexspi_init(base, &config->memConfig);
         if (status != kStatus_Success)
         {
             break;
         }
         // Configure Lookup table for read
-        flexspi_update_lut(instance, 0, config->memConfig.lookupTable, 1);
+        flexspi_update_lut(base, 0, config->memConfig.lookupTable, 1);
     } while (0);
 
     return status;
 }
 
-status_t flexspi_nand_read_page(uint32_t instance, flexspi_nand_config_t *config, uint32_t pageId, uint32_t *buffer, uint32_t length)
+status_t flexspi_nand_read_page(FLEXSPI_Type *base, flexspi_nand_config_t *config, uint32_t pageId, uint32_t *buffer, uint32_t length)
 {
     status_t status = kStatus_InvalidArgument;
     do
@@ -238,10 +220,10 @@ status_t flexspi_nand_read_page(uint32_t instance, flexspi_nand_config_t *config
         }
         flashXfer.isParallelModeEnable = false;
         flashXfer.operation = kFlexSpiOperation_Command;
-        flexspi_update_lut(instance, NAND_CMD_LUT_FOR_IP_CMD, &config->memConfig.lookupTable[4 * flashXfer.seqId],
+        flexspi_update_lut(base, NAND_CMD_LUT_FOR_IP_CMD, &config->memConfig.lookupTable[4 * flashXfer.seqId],
                            flashXfer.seqNum);
         flashXfer.seqId = NAND_CMD_LUT_FOR_IP_CMD;
-        status = flexspi_command_xfer(instance, &flashXfer);
+        status = flexspi_command_xfer(base, &flashXfer);
         if (status != kStatus_Success)
         {
             status = kStatus_FlexSPINAND_ReadPageFail;
@@ -255,18 +237,18 @@ status_t flexspi_nand_read_page(uint32_t instance, flexspi_nand_config_t *config
         }
         else
         {
-            status = flexspi_device_wait_busy(instance, flexspiConfig, false, baseAddress);
+            status = flexspi_device_wait_busy(base, flexspiConfig, false, baseAddress);
             if (status != kStatus_Success)
             {
                 break;
             }
         }
 
-        flexspi_clear_cache(instance);
+        flexspi_clear_cache(base);
 
         if (!config->bypassEccRead)
         {
-            status = flexspi_nand_check_ecc_status(instance, config, baseAddress, &isEccCheckPass);
+            status = flexspi_nand_check_ecc_status(base, config, baseAddress, &isEccCheckPass);
             if (status != kStatus_Success)
             {
                 break;
@@ -287,7 +269,7 @@ status_t flexspi_nand_read_page(uint32_t instance, flexspi_nand_config_t *config
             {
                 // Update Read Cache command for page read in Odd blocks
                 need_switch_read_lut = true;
-                flexspi_update_lut(instance, NAND_CMD_LUT_SEQ_IDX_READCACHE,
+                flexspi_update_lut(base, NAND_CMD_LUT_SEQ_IDX_READCACHE,
                                    &config->memConfig.lookupTable[4 * NAND_CMD_LUT_SEQ_IDX_READCACHE_ODD], 1);
             }
         }
@@ -307,7 +289,7 @@ status_t flexspi_nand_read_page(uint32_t instance, flexspi_nand_config_t *config
             flashXfer.rxSize = length;
             flashXfer.seqId = NAND_CMD_LUT_SEQ_IDX_READCACHE;
             flashXfer.seqNum = 1;
-            status = flexspi_command_xfer(instance, &flashXfer);
+            status = flexspi_command_xfer(base, &flashXfer);
             if (status != kStatus_Success)
             {
                 break;
@@ -317,7 +299,7 @@ status_t flexspi_nand_read_page(uint32_t instance, flexspi_nand_config_t *config
         if (need_switch_read_lut)
         {
             // Restore Read Cache command for page read in Even blocks
-            flexspi_update_lut(instance, NAND_CMD_LUT_SEQ_IDX_READCACHE,
+            flexspi_update_lut(base, NAND_CMD_LUT_SEQ_IDX_READCACHE,
                                &config->memConfig.lookupTable[4 * NAND_CMD_LUT_SEQ_IDX_READCACHE], 1);
         }
 
@@ -326,7 +308,7 @@ status_t flexspi_nand_read_page(uint32_t instance, flexspi_nand_config_t *config
     return status;
 }
 
-status_t flexspi_nand_erase_block(uint32_t instance, flexspi_nand_config_t *config, uint32_t blockId)
+status_t flexspi_nand_erase_block(FLEXSPI_Type *base, flexspi_nand_config_t *config, uint32_t blockId)
 {
     status_t status = kStatus_InvalidArgument;
 
@@ -344,7 +326,7 @@ status_t flexspi_nand_erase_block(uint32_t instance, flexspi_nand_config_t *conf
 
         baseAddress = blockId * config->pagesPerBlock * config->pageTotalSize;
 
-        status = flexspi_nand_write_enable(instance, config, baseAddress);
+        status = flexspi_nand_write_enable(base, config, baseAddress);
         if (status != kStatus_Success)
         {
             break;
@@ -360,23 +342,23 @@ status_t flexspi_nand_erase_block(uint32_t instance, flexspi_nand_config_t *conf
             flashXfer.seqNum = flexspiConfig->lutCustomSeq[NAND_CMD_INDEX_ERASEBLOCK].seqNum;
         }
         flashXfer.baseAddress = baseAddress;
-        flexspi_update_lut(instance, NAND_CMD_LUT_FOR_IP_CMD, &config->memConfig.lookupTable[4 * flashXfer.seqId],
+        flexspi_update_lut(base, NAND_CMD_LUT_FOR_IP_CMD, &config->memConfig.lookupTable[4 * flashXfer.seqId],
                            flashXfer.seqNum);
         flashXfer.seqId = NAND_CMD_LUT_FOR_IP_CMD;
-        status = flexspi_command_xfer(instance, &flashXfer);
+        status = flexspi_command_xfer(base, &flashXfer);
         if (status != kStatus_Success)
         {
             status = kStatus_FlexSPINAND_EraseBlockFail;
             break;
         }
 
-        status = flexspi_device_wait_busy(instance, flexspiConfig, false, baseAddress);
+        status = flexspi_device_wait_busy(base, flexspiConfig, false, baseAddress);
         if (status != kStatus_Success)
         {
             break;
         }
 
-        status = flexspi_nand_check_error_status(instance, config, baseAddress);
+        status = flexspi_nand_check_error_status(base, config, baseAddress);
         if (status != kStatus_Success)
         {
             break;
@@ -384,7 +366,7 @@ status_t flexspi_nand_erase_block(uint32_t instance, flexspi_nand_config_t *conf
 
         if (!config->bypassEccRead)
         {
-            status = flexspi_nand_check_ecc_status(instance, config, baseAddress, &isEccCheckPassed);
+            status = flexspi_nand_check_ecc_status(base, config, baseAddress, &isEccCheckPassed);
             if (status != kStatus_Success)
             {
                 break;
@@ -401,7 +383,7 @@ status_t flexspi_nand_erase_block(uint32_t instance, flexspi_nand_config_t *conf
     return status;
 }
 
-status_t flexspi_nand_erase(uint32_t instance, flexspi_nand_config_t *config, uint32_t pageStart, uint32_t pages)
+status_t flexspi_nand_erase(FLEXSPI_Type *base, flexspi_nand_config_t *config, uint32_t pageStart, uint32_t pages)
 {
     status_t status = kStatus_InvalidArgument;
 
@@ -412,7 +394,7 @@ status_t flexspi_nand_erase(uint32_t instance, flexspi_nand_config_t *config, ui
 
         while (aligned_block_start < aligned_block_end)
         {
-            status = flexspi_nand_erase_block(instance, config, aligned_block_start);
+            status = flexspi_nand_erase_block(base, config, aligned_block_start);
             if (status != kStatus_Success)
             {
                 return status;
@@ -425,7 +407,7 @@ status_t flexspi_nand_erase(uint32_t instance, flexspi_nand_config_t *config, ui
 }
 
 status_t flexspi_nand_program_page(
-    uint32_t instance, flexspi_nand_config_t *config, uint32_t pageId, uint32_t *src, uint32_t length)
+    FLEXSPI_Type *base, flexspi_nand_config_t *config, uint32_t pageId, uint32_t *src, uint32_t length)
 {
     status_t status = kStatus_InvalidArgument;
 
@@ -442,7 +424,7 @@ status_t flexspi_nand_program_page(
         flexspi_mem_config_t *flexspiConfig = &config->memConfig;
         baseAddress = pageId * config->pageTotalSize;
 
-        flexspi_nand_write_enable(instance, config, baseAddress);
+        flexspi_nand_write_enable(base, config, baseAddress);
 
         // Send Page load command
         flashXfer.baseAddress = baseAddress;
@@ -471,10 +453,10 @@ status_t flexspi_nand_program_page(
             }
         }
 
-        flexspi_update_lut(instance, NAND_CMD_LUT_FOR_IP_CMD, &config->memConfig.lookupTable[4 * flashXfer.seqId],
+        flexspi_update_lut(base, NAND_CMD_LUT_FOR_IP_CMD, &config->memConfig.lookupTable[4 * flashXfer.seqId],
                            flashXfer.seqNum);
         flashXfer.seqId = NAND_CMD_LUT_FOR_IP_CMD;
-        status = flexspi_command_xfer(instance, &flashXfer);
+        status = flexspi_command_xfer(base, &flashXfer);
         if (status != kStatus_Success)
         {
             status = kStatus_FlexSPINAND_PageLoadFail;
@@ -490,10 +472,10 @@ status_t flexspi_nand_program_page(
             flashXfer.seqId = flexspiConfig->lutCustomSeq[NAND_CMD_INDEX_PROGRAMEXECUTE].seqId;
             flashXfer.seqNum = flexspiConfig->lutCustomSeq[NAND_CMD_INDEX_PROGRAMEXECUTE].seqNum;
         }
-        flexspi_update_lut(instance, NAND_CMD_LUT_FOR_IP_CMD, &config->memConfig.lookupTable[4 * flashXfer.seqId],
+        flexspi_update_lut(base, NAND_CMD_LUT_FOR_IP_CMD, &config->memConfig.lookupTable[4 * flashXfer.seqId],
                            flashXfer.seqNum);
         flashXfer.seqId = NAND_CMD_LUT_FOR_IP_CMD;
-        status = flexspi_command_xfer(instance, &flashXfer);
+        status = flexspi_command_xfer(base, &flashXfer);
         if (status != kStatus_Success)
         {
             status = kStatus_FlexSPINAND_PageExecuteFail;
@@ -501,13 +483,13 @@ status_t flexspi_nand_program_page(
         }
 
         // Wait until the program operation is complete.
-        status = flexspi_device_wait_busy(instance, flexspiConfig, false, baseAddress);
+        status = flexspi_device_wait_busy(base, flexspiConfig, false, baseAddress);
         if (status != kStatus_Success)
         {
             break;
         }
 
-        status = flexspi_nand_check_error_status(instance, config, baseAddress);
+        status = flexspi_nand_check_error_status(base, config, baseAddress);
         if (status != kStatus_Success)
         {
             break;
@@ -515,7 +497,7 @@ status_t flexspi_nand_program_page(
 
         if (!config->bypassEccRead)
         {
-            status = flexspi_nand_check_ecc_status(instance, config, baseAddress, &isEccCheckPassed);
+            status = flexspi_nand_check_ecc_status(base, config, baseAddress, &isEccCheckPassed);
             if (status != kStatus_Success)
             {
                 break;
@@ -532,7 +514,7 @@ status_t flexspi_nand_program_page(
     return status;
 }
 
-status_t flexspi_nand_verify_id(uint32_t instance, serial_nand_config_option_t *option)
+status_t flexspi_nand_verify_id(FLEXSPI_Type *base, serial_nand_config_option_t *option)
 {
     status_t status = kStatus_InvalidArgument;
     uint32_t id = 0;
@@ -548,7 +530,7 @@ status_t flexspi_nand_verify_id(uint32_t instance, serial_nand_config_option_t *
 
     do
     {
-        status = flexspi_command_xfer(instance, &flashXfer);
+        status = flexspi_command_xfer(base, &flashXfer);
         if (status != kStatus_Success)
         {
             break;
@@ -574,7 +556,7 @@ status_t flexspi_nand_verify_id(uint32_t instance, serial_nand_config_option_t *
     return status;
 }
 
-status_t flexspi_nand_get_config(uint32_t instance, flexspi_nand_config_t *config, serial_nand_config_option_t *option)
+status_t flexspi_nand_get_config(FLEXSPI_Type *base, flexspi_nand_config_t *config, serial_nand_config_option_t *option)
 {
     status_t status = kStatus_InvalidArgument;
 
@@ -629,13 +611,13 @@ status_t flexspi_nand_get_config(uint32_t instance, flexspi_nand_config_t *confi
             }
         }
 
-        status = flexspi_nand_init(instance, config);
+        status = flexspi_nand_init(base, config);
         if (status != kStatus_Success)
         {
             break;
         }
 
-        status = flexspi_nand_software_reset(instance, config, option);
+        status = flexspi_nand_software_reset(base, config, option);
         if (status != kStatus_Success)
         {
             break;
@@ -646,10 +628,10 @@ status_t flexspi_nand_get_config(uint32_t instance, flexspi_nand_config_t *confi
         memset(readIdSeq, 0, sizeof(readIdSeq));
         readIdSeq[0] = FLEXSPI_LUT_SEQ(CMD_SDR, FLEXSPI_1PAD, kSerialNandCmd_ReadId, CMD_SDR, FLEXSPI_1PAD, 0x0),
         readIdSeq[1] = FLEXSPI_LUT_SEQ(READ_SDR, FLEXSPI_1PAD, 0x02, STOP, FLEXSPI_1PAD, 0);
-        flexspi_update_lut(instance, NAND_CMD_LUT_FOR_IP_CMD, readIdSeq, 1);
+        flexspi_update_lut(base, NAND_CMD_LUT_FOR_IP_CMD, readIdSeq, 1);
 
         // Probe device presence by verifying Manufacturer ID
-        status = flexspi_nand_verify_id(instance, option);
+        status = flexspi_nand_verify_id(base, option);
         if (status != kStatus_Success)
         {
             break;
@@ -948,7 +930,7 @@ status_t flexspi_nand_get_config(uint32_t instance, flexspi_nand_config_t *confi
     return status;
 }
 
-status_t flexspi_nand_software_reset(uint32_t instance, flexspi_nand_config_t *config, serial_nand_config_option_t *option)
+status_t flexspi_nand_software_reset(FLEXSPI_Type *base, flexspi_nand_config_t *config, serial_nand_config_option_t *option)
 {
     status_t status = kStatus_InvalidArgument;
     flexspi_xfer_t xfer;
@@ -976,8 +958,8 @@ status_t flexspi_nand_software_reset(uint32_t instance, flexspi_nand_config_t *c
             xfer.seqNum = 1;
         }
 
-        flexspi_update_lut(instance, xfer.seqId, &lut_seq[0], xfer.seqNum);
-        status = flexspi_command_xfer(instance, &xfer);
+        flexspi_update_lut(base, xfer.seqId, &lut_seq[0], xfer.seqNum);
+        status = flexspi_command_xfer(base, &xfer);
 
         // Delay several ms until device is restored to SPI protocol
         mixspi_sw_delay_us(1000);

@@ -11,14 +11,6 @@
 #include "snand_flash.h"
 #include <string.h>
 
-#ifndef SPINAND_INSTANCE
-#define SPINAND_INSTANCE 0
-#endif
-
-#ifndef SPINAND_ERASE_VERIFY
-#define SPINAND_ERASE_VERIFY 1
-#endif
-
 ////////////////////////////////////////////////////////////////////////////////
 // Definitions
 ////////////////////////////////////////////////////////////////////////////////
@@ -46,7 +38,6 @@ enum
 typedef struct _spinand_mem_context
 {
     bool isConfigured;
-    bool needToUpdateDbbt;
     uint32_t nandAddressType;
     uint32_t startBlockId;
     bool readwriteInProgress;
@@ -70,7 +61,7 @@ static status_t spinand_mem_flush_buffer(void);
 
 static status_t spinand_mem_block_backup(uint32_t srcPageAddr, uint32_t destBlockAddr);
 
-#if BL_FEATURE_FLASH_CHECK_CUMULATIVE_WRITE
+#if SNAND_FLASH_CHECK_CUMULATIVE_WRITE
 static bool is_erased_memory(uint32_t pageAddr, uint32_t pageCount);
 #endif
 
@@ -170,7 +161,7 @@ status_t nand_generate_fcb(spinand_fcb_t *fcb, serial_nand_config_option_t *opti
 
         memset(fcb, 0, sizeof(spinand_fcb_t));
 
-        status = flexspi_nand_get_config(SPINAND_INSTANCE, &fcb->config, option);
+        status = flexspi_nand_get_config(EXAMPLE_MIXSPI, &fcb->config, option);
         if (status != kStatus_Success)
         {
             break;
@@ -679,12 +670,12 @@ static status_t spinand_mem_flush_buffer(void)
 
     uint32_t srcPageAddr = s_spinandContext.writeBufferPageAddr;
 
-#if BL_FEATURE_FLASH_CHECK_CUMULATIVE_WRITE
+#if SNAND_FLASH_CHECK_CUMULATIVE_WRITE
     if (!is_erased_memory(srcPageAddr, 1))
     {
         return kStatusMemoryCumulativeWrite;
     }
-#endif // #if BL_FEATURE_FLASH_CHECK_CUMULATIVE_WRITE
+#endif // #if SNAND_FLASH_CHECK_CUMULATIVE_WRITE
 
     // Flush the data in the write buffer to SPI NAND
     status =
@@ -711,12 +702,12 @@ static status_t spinand_mem_flush_buffer(void)
         {
             // If a good block, try to backup the datas to next block.
             status = spinand_mem_block_backup(srcPageAddr, destBlockAddr);
-#if BL_FEATURE_FLASH_CHECK_CUMULATIVE_WRITE
+#if SNAND_FLASH_CHECK_CUMULATIVE_WRITE
             // Return if success or the next good block is not erased.
             if ((status == kStatus_Success) || (status == kStatusMemoryCumulativeWrite))
 #else
             if (status == kStatus_Success)
-#endif // #if BL_FEATURE_FLASH_CHECK_CUMULATIVE_WRITE
+#endif // #if SNAND_FLASH_CHECK_CUMULATIVE_WRITE
             {
                 return status;
             }
@@ -741,13 +732,13 @@ static status_t spinand_mem_block_backup(uint32_t srcPageAddr, uint32_t destBloc
     uint32_t destPageAddr =
         destBlockAddr * s_spinandFcb.config.pagesPerBlock; // Destination page to store the first page.
 
-#if BL_FEATURE_FLASH_CHECK_CUMULATIVE_WRITE
+#if SNAND_FLASH_CHECK_CUMULATIVE_WRITE
     // Firstly, need to check if the destination is erased.
     if (!is_erased_memory(destPageAddr, endPageAddr - startPageAddr + 1))
     {
         return kStatusMemoryCumulativeWrite;
     }
-#endif // #if BL_FEATURE_FLASH_CHECK_CUMULATIVE_WRITE
+#endif // #if SNAND_FLASH_CHECK_CUMULATIVE_WRITE
 
     // Move all pages in the block to the good block, except the last page.
     while (startPageAddr < endPageAddr)
@@ -777,7 +768,7 @@ static status_t spinand_mem_block_backup(uint32_t srcPageAddr, uint32_t destBloc
                                            (uint8_t*)s_spinandContext.writeBuffer);
 }
 
-#if BL_FEATURE_FLASH_CHECK_CUMULATIVE_WRITE
+#if SNAND_FLASH_CHECK_CUMULATIVE_WRITE
 static bool is_erased_memory(uint32_t pageAddr, uint32_t pageCount)
 {
     status_t status;
@@ -809,7 +800,7 @@ static bool is_erased_memory(uint32_t pageAddr, uint32_t pageCount)
     }
     return true;
 }
-#endif // #if BL_FEATURE_FLASH_CHECK_CUMULATIVE_WRITE
+#endif // #if SNAND_FLASH_CHECK_CUMULATIVE_WRITE
 
 static status_t spinand_memory_read(uint32_t pageAddr, uint32_t length, uint8_t *buffer)
 {
@@ -900,22 +891,22 @@ status_t spinand_memory_erase_and_verify(uint32_t blockAddr)
 
 status_t spinand_memory_spi_init(flexspi_nand_config_t *config)
 {
-    return flexspi_nand_init(SPINAND_INSTANCE, config);
+    return flexspi_nand_init(EXAMPLE_MIXSPI, config);
 }
 
 static status_t spinand_memory_read_page(uint32_t pageAddr, uint32_t length, uint8_t *buffer)
 {
-    return flexspi_nand_read_page(SPINAND_INSTANCE, &s_spinandFcb.config, pageAddr, (uint32_t *)buffer, length);
+    return flexspi_nand_read_page(EXAMPLE_MIXSPI, &s_spinandFcb.config, pageAddr, (uint32_t *)buffer, length);
 }
 
 static status_t spinand_memory_program_page(uint32_t pageAddr, uint32_t length, uint8_t *buffer)
 {
-    return flexspi_nand_program_page(SPINAND_INSTANCE, &s_spinandFcb.config, pageAddr, (uint32_t *)buffer, length);
+    return flexspi_nand_program_page(EXAMPLE_MIXSPI, &s_spinandFcb.config, pageAddr, (uint32_t *)buffer, length);
 }
 
 static status_t spinand_memory_erase_block(uint32_t blockAddr)
 {
-    return flexspi_nand_erase_block(SPINAND_INSTANCE, &s_spinandFcb.config, blockAddr);
+    return flexspi_nand_erase_block(EXAMPLE_MIXSPI, &s_spinandFcb.config, blockAddr);
 }
 
 static bool is_spinand_configured(void)

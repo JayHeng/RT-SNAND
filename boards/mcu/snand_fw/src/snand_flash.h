@@ -31,7 +31,8 @@ typedef struct _snand_property_info
 enum _memory_interface_status
 {
     kStatusMemoryRangeInvalid = MAKE_STATUS(200, 0),
-    kStatusMemoryNotConfigured = MAKE_STATUS(200, 1),
+    kStatusMemoryCumulativeWrite = MAKE_STATUS(200, 3),
+    kStatusMemoryNotConfigured = MAKE_STATUS(200, 5),
 };
 
 /*! @brief Status for FLEXSPI NAND driver */
@@ -207,7 +208,7 @@ typedef struct
      * @param instance FlexSPI instance
      * @param config Serial NAND configuration paramters via FlexSPI
      */
-    status_t flexspi_nand_init(uint32_t instance, flexspi_nand_config_t *config);
+    status_t flexspi_nand_init(FLEXSPI_Type *base, flexspi_nand_config_t *config);
 
     /*
      * !@brief Read content from specified page via FlexSPI
@@ -221,7 +222,7 @@ typedef struct
      * @param length specified length of data to be read
      */
     status_t flexspi_nand_read_page(
-        uint32_t instance, flexspi_nand_config_t *config, uint32_t pageId, uint32_t *buffer, uint32_t length);
+        FLEXSPI_Type *base, flexspi_nand_config_t *config, uint32_t pageId, uint32_t *buffer, uint32_t length);
 
     /*
      * !@brief Erase a block from Serial NAND via FlexSPI
@@ -233,7 +234,7 @@ typedef struct
      * @param blockId Specified block Index
      */
     //!@brief Erase a Serial NAND Block via FlexSPI
-    status_t flexspi_nand_erase_block(uint32_t instance, flexspi_nand_config_t *config, uint32_t blockId);
+    status_t flexspi_nand_erase_block(FLEXSPI_Type *base, flexspi_nand_config_t *config, uint32_t blockId);
 
     /*
      * !@brief Erase several pages from Serial NAND via FlexSPI
@@ -245,7 +246,7 @@ typedef struct
      * @param pageStart Specified the first page to be erased
      * @param pages Total page counts to be erased.
      */
-    status_t flexspi_nand_erase(uint32_t instance, flexspi_nand_config_t *config, uint32_t pageStart, uint32_t pages);
+    status_t flexspi_nand_erase(FLEXSPI_Type *base, flexspi_nand_config_t *config, uint32_t pageStart, uint32_t pages);
 
     /*
      * !@brief Program data to specified page via FlexSPI
@@ -260,11 +261,11 @@ typedef struct
      */
     //!@brief Program data to specified Serial NAND page via FlexSPI
     status_t flexspi_nand_program_page(
-        uint32_t instance, flexspi_nand_config_t *config, uint32_t pageId, uint32_t *src, uint32_t length);
+        FLEXSPI_Type *base, flexspi_nand_config_t *config, uint32_t pageId, uint32_t *src, uint32_t length);
 
     status_t flexspi_nand_get_default_cfg_blk(flexspi_nand_config_t *config);
 
-    status_t flexspi_nand_get_config(uint32_t instance,
+    status_t flexspi_nand_get_config(FLEXSPI_Type *base,
                                      flexspi_nand_config_t *config,
                                      serial_nand_config_option_t *option);
     /*
@@ -276,7 +277,7 @@ typedef struct
      * @param config Serial NAND configuration paramters via FlexSPI
      * @param option Serial NAND configuration option words.
      */
-    status_t flexspi_nand_software_reset(uint32_t instance,
+    status_t flexspi_nand_software_reset(FLEXSPI_Type *base,
                                         flexspi_nand_config_t *config,
                                         serial_nand_config_option_t *option);
 

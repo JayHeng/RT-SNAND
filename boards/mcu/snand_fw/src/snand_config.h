@@ -14,6 +14,9 @@
 // Whether to show SNAND log info via UART console (for development)
 #define SNAND_DEBUG_LOG_INFO_ENABLE        (1)
 
+// Whether to check SNAND content is erased before write
+#define SNAND_FLASH_CHECK_CUMULATIVE_WRITE (1)
+
 /*******************************************************************************
  * Variables
  ******************************************************************************/
