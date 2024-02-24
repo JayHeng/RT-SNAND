@@ -86,96 +86,31 @@ static const uint32_t s_read_ecc_status_lut[4] = {
 // Code
 ////////////////////////////////////////////////////////////////////////////////
 
-//!@brief Configure clock for FlexSPI peripheral
-void flexspi_clock_config(FLEXSPI_Type *base, uint32_t freq, uint32_t sampleClkMode)
+mixspi_root_clk_freq_t flexspi_convert_clock_for_ddr(mixspi_root_clk_freq_t freq)
 {
-    uint32_t pfd480 = 0;
-    uint32_t cscmr1 = 0;
-    uint32_t frac = 0;
-    uint32_t podf = 0;
-
-    typedef struct _flexspi_clock_param
+    switch(freq)
     {
-        uint8_t frac;
-        uint8_t podf;
-    } flexspi_clock_param_t;
 
-    const flexspi_clock_param_t k_sdr_clock_config[kMixspiRootClkFreq_200MHz + 1] = {
-        // Reserved, 30MHz     50MHz     60MHz        75MHz    80MHz       100MHz   133MHz       166MHz   200MHz
-        { 0, 0 }, { 34, 8 }, { 22, 8 }, { 24, 6 }, { 30, 4 }, { 18, 6 }, { 14, 6 }, { 17, 4 }, { 26, 2 }, { 22, 2 }
-    };
-    const flexspi_clock_param_t k_ddr_clock_config[kMixspiRootClkFreq_200MHz + 1] = {
-        // Reserved, 30MHz,  50MHz,       60MHz,      75MHz,   80Mhz,   100MHz,      133MHz,   166MHz,     200MHz
-        { 0, 0 }, { 24, 6 }, { 22, 4 }, { 12, 6 }, { 30, 2 }, { 18, 3 }, { 22, 2 }, { 33, 1 }, { 26, 1 }, { 22, 1 }
-    };
-
-    do
-    {
-        if ((sampleClkMode != kFlexSpiClk_SDR) && (sampleClkMode != kFlexSpiClk_DDR))
-        {
-            break;
-        }
-
-        pfd480 = CCM_ANALOG->PFD_480 & (~CCM_ANALOG_PFD_480_PFD0_FRAC_MASK);
-        cscmr1 = CCM->CSCMR1 & (~CCM_CSCMR1_FLEXSPI_PODF_MASK);
-
-        // Note: Per ANALOG IP Owner's recommendation, FRAC should be even number,
-        //       PODF should be even nubmer as well if the divider is greater than 1
-
-        const flexspi_clock_param_t *flexspi_config_array = NULL;
-        if (sampleClkMode == kFlexSpiClk_SDR)
-        {
-            flexspi_config_array = &k_sdr_clock_config[0];
-        }
-        else
-        {
-            flexspi_config_array = &k_ddr_clock_config[0];
-        }
-
-        if (freq >= kMixspiRootClkFreq_30MHz)
-        {
-            if (freq > kMixspiRootClkFreq_200MHz)
-            {
-                freq = kMixspiRootClkFreq_30MHz;
-            }
-
-            frac = flexspi_config_array[freq].frac;
-            podf = flexspi_config_array[freq].podf;
-
-            pfd480 |= CCM_ANALOG_PFD_480_PFD0_FRAC(frac);
-            cscmr1 |= CCM_CSCMR1_FLEXSPI_PODF(podf - 1);
-
-            FLEXSPI->MCR0 |= FLEXSPI_MCR0_MDIS_MASK;
-            flexspi_clock_gate_disable(base);
-
-            if (pfd480 != CCM_ANALOG->PFD_480)
-            {
-                CCM_ANALOG->PFD_480 = pfd480;
-            }
-            if (cscmr1 != CCM->CSCMR1)
-            {
-                CCM->CSCMR1 = cscmr1;
-            }
-            flexspi_clock_gate_enable(base);
-            FLEXSPI->MCR0 &= ~FLEXSPI_MCR0_MDIS_MASK;
-        }
-        else
-        {
-            // Do nothing
-        }
-    } while (0);
-}
-
-//!@brief Gate on the clock for the FlexSPI peripheral
-void flexspi_clock_gate_enable(FLEXSPI_Type *base)
-{
-    CCM->CCGR6 |= CCM_CCGR6_CG5_MASK;
-}
-
-//!@brief Gate off the clock the FlexSPI peripheral
-void flexspi_clock_gate_disable(FLEXSPI_Type *base)
-{
-    CCM->CCGR6 &= (uint32_t)~CCM_CCGR6_CG5_MASK;
+        case kMixspiRootClkFreq_50MHz:
+            return kMixspiRootClkFreq_100MHz; 
+        case kMixspiRootClkFreq_60MHz:
+            return kMixspiRootClkFreq_120MHz; 
+        case kMixspiRootClkFreq_80MHz:
+            return kMixspiRootClkFreq_166MHz; 
+        case kMixspiRootClkFreq_100MHz:
+            return kMixspiRootClkFreq_200MHz; 
+        case kMixspiRootClkFreq_120MHz:
+            return kMixspiRootClkFreq_240MHz; 
+        case kMixspiRootClkFreq_133MHz:
+            return kMixspiRootClkFreq_266MHz; 
+        case kMixspiRootClkFreq_166MHz:
+            return kMixspiRootClkFreq_332MHz; 
+        case kMixspiRootClkFreq_200MHz:
+            return kMixspiRootClkFreq_400MHz;
+        case kMixspiRootClkFreq_30MHz:
+        default:
+            return kMixspiRootClkFreq_60MHz;
+    }
 }
 
 status_t flexspi_set_failsafe_setting(flexspi_mem_config_t *config)
@@ -242,55 +177,6 @@ status_t flexspi_get_max_supported_freq(FLEXSPI_Type *base, uint32_t *freq, uint
         status = kStatus_Success;
 
     } while (0);
-
-    return status;
-}
-
-//!@brief Get Clock for FlexSPI peripheral
-status_t flexspi_get_clock(FLEXSPI_Type *base, flexspi_clock_type_t type, uint32_t *freq)
-{
-    uint32_t clockFrequency = 0;
-    status_t status = kStatus_Success;
-
-    uint32_t ahbBusDivider;
-    uint32_t seralRootClkDivider;
-    uint32_t arm_clock = SystemCoreClock;
-
-    switch (type)
-    {
-        case kFlexSpiClock_CoreClock:
-            clockFrequency = SystemCoreClock;
-            break;
-        case kFlexSpiClock_AhbClock:
-        {
-            // Note: In I.MXRT_512, actual AHB clock is IPG_CLOCK_ROOT
-            ahbBusDivider = ((CCM->CBCDR & CCM_CBCDR_IPG_PODF_MASK) >> CCM_CBCDR_IPG_PODF_SHIFT) + 1;
-            clockFrequency = arm_clock / ahbBusDivider;
-        }
-        break;
-        case kFlexSpiClock_SerialRootClock:
-        {
-            uint32_t pfdFrac;
-            uint32_t pfdClk;
-
-            // FLEXPI CLK SEL
-            uint32_t flexspi_clk_src =
-                (CCM->CSCMR1 & CCM_CSCMR1_FLEXSPI_CLK_SEL_MASK) >> CCM_CSCMR1_FLEXSPI_CLK_SEL_SHIFT;
-
-            // PLL_480_PFD0
-            pfdFrac = (CCM_ANALOG->PFD_480 & CCM_ANALOG_PFD_480_PFD0_FRAC_MASK) >> CCM_ANALOG_PFD_480_PFD0_FRAC_SHIFT;
-            pfdClk = FREQ_480MHz / pfdFrac * 18;
-
-            seralRootClkDivider = ((CCM->CSCMR1 & CCM_CSCMR1_FLEXSPI_PODF_MASK) >> CCM_CSCMR1_FLEXSPI_PODF_SHIFT) + 1;
-
-            clockFrequency = pfdClk / seralRootClkDivider;
-        }
-        break;
-        default:
-            status = kStatus_InvalidArgument;
-            break;
-    }
-    *freq = clockFrequency;
 
     return status;
 }

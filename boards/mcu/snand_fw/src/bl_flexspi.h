@@ -320,7 +320,8 @@ extern "C"
     status_t flexspi_command_xfer(FLEXSPI_Type *base, flexspi_xfer_t *xfer);
 
     //!@brief Get FlexSPI Clock frequency
-    extern status_t flexspi_get_clock(FLEXSPI_Type *base, flexspi_clock_type_t type, uint32_t *freq);
+    //extern status_t flexspi_get_clock(FLEXSPI_Type *base, flexspi_clock_type_t type, uint32_t *freq);
+    extern mixspi_root_clk_freq_t flexspi_convert_clock_for_ddr(mixspi_root_clk_freq_t freq);
 
     //!@brief Wait until FlexSPI controller becomes idle
     void flexspi_wait_idle(FLEXSPI_Type *base);
@@ -331,17 +332,11 @@ extern "C"
     //!@brief Clear FlexSPI sequence pointer
     void flexspi_clear_sequence_pointer(FLEXSPI_Type *base);
 
-    //!@brief Enable clock gate of FlexSPI
-    extern void flexspi_clock_gate_enable(FLEXSPI_Type *base);
-
-    //!@brief Disable clock gate of FlexSPI
-    extern void flexspi_clock_gate_disable(FLEXSPI_Type *base);
-
     //!@brief Configure IOMUX for FlexSPI
     extern void flexspi_iomux_config(FLEXSPI_Type *base, flexspi_mem_config_t *config);
 
     //!@brief Configure Clock for FlexSPI
-    extern void flexspi_clock_config(FLEXSPI_Type *base, uint32_t freq, uint32_t sampleClkMode);
+    //extern void flexspi_clock_config(FLEXSPI_Type *base, uint32_t freq, uint32_t sampleClkMode);
 
     //!@brief Check whether Pad Setting Override feature is enabled.
     bool flexspi_is_padsetting_override_enable(flexspi_mem_config_t *config);

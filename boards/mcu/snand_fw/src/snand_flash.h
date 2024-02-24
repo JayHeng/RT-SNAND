@@ -260,10 +260,7 @@ typedef struct
      * @param length specified length of data to be programmed
      */
     //!@brief Program data to specified Serial NAND page via FlexSPI
-    status_t flexspi_nand_program_page(
-        FLEXSPI_Type *base, flexspi_nand_config_t *config, uint32_t pageId, uint32_t *src, uint32_t length);
-
-    status_t flexspi_nand_get_default_cfg_blk(flexspi_nand_config_t *config);
+    status_t flexspi_nand_program_page(FLEXSPI_Type *base, flexspi_nand_config_t *config, uint32_t pageId, uint32_t *src, uint32_t length);
 
     status_t flexspi_nand_get_config(FLEXSPI_Type *base,
                                      flexspi_nand_config_t *config,
@@ -280,5 +277,8 @@ typedef struct
     status_t flexspi_nand_software_reset(FLEXSPI_Type *base,
                                         flexspi_nand_config_t *config,
                                         serial_nand_config_option_t *option);
+
+    mixspi_root_clk_freq_t flexspi_convert_clock_for_ddr(mixspi_root_clk_freq_t freq);
+    status_t flexspi_nand_get_default_cfg_blk(flexspi_nand_config_t *config);
 
 #endif /* _SNAND_FLASH_H_ */

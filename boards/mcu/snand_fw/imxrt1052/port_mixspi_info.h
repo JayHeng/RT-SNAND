@@ -107,6 +107,11 @@ static void cpu_show_clock_source(void)
 #endif
 }
 
+static uint32_t cpu_get_ahb_clock(void)
+{
+    return CLOCK_GetFreq(kCLOCK_AhbClk);
+}
+
 static void mixspi_port_switch(FLEXSPI_Type *base, flexspi_port_t port, flexspi_pad_t pads)
 {
 }
@@ -145,6 +150,18 @@ static void mixspi_pin_init(FLEXSPI_Type *base, flexspi_port_t port, flexspi_pad
     else
     {
     }
+}
+
+//!@brief Gate on the clock for the FlexSPI peripheral
+static void mixspi_clock_gate_enable(FLEXSPI_Type *base)
+{
+    CCM->CCGR6 |= CCM_CCGR6_CG5_MASK;
+}
+
+//!@brief Gate off the clock the FlexSPI peripheral
+static void mixspi_clock_gate_disable(FLEXSPI_Type *base)
+{
+    CCM->CCGR6 &= (uint32_t)~CCM_CCGR6_CG5_MASK;
 }
 
 static void mixspi_clock_init(FLEXSPI_Type *base, mixspi_root_clk_freq_t clkFreq)

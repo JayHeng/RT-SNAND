@@ -22,9 +22,6 @@
 #define FREQ_1MHz (1000000UL)
 #define FLEXSPI_DLLCR_DEFAULT (0x100UL)
 
-#define FLEXSPI0_CLK_GATE_OFFSET 13U
-#define FLEXSPI1_CLK_GATE_OFFSET 15U
-
 #define CMD_LUT_FOR_IP_CMD 1 //!< LUT sequence id for IP command
 
 enum
@@ -215,8 +212,7 @@ status_t flexspi_configure_dll(FLEXSPI_Type *base, flexspi_mem_config_t *config)
 #if FLEXSPI_ENABLE_OCTAL_FLASH_SUPPORT
         else
         {
-            flexspi_get_clock(base, kFlexSpiClock_SerialRootClock, &flexspiRootClk);
-
+            flexspiRootClk = mixspi_get_clock(base);
             bool useDLL = false;
 
             // See FlexSPI Chapter for more details
@@ -369,9 +365,8 @@ status_t flexspi_config_mcr1(FLEXSPI_Type *base, flexspi_mem_config_t *config)
     {
         return kStatus_InvalidArgument;
     }
-
-    flexspi_get_clock(base, kFlexSpiClock_SerialRootClock, &serialRootClockFreq);
-    flexspi_get_clock(base, kFlexSpiClock_AhbClock, &ahbBusClockFreq);
+    serialRootClockFreq = mixspi_get_clock(base);
+    ahbBusClockFreq = cpu_get_ahb_clock();
     flexspi_get_ticks(&seqWaitTicks, FLEXSPI_WAIT_TIMEOUT_NS, serialRootClockFreq, 1024);
     flexspi_get_ticks(&ahbBusWaitTicks, FLEXSPI_WAIT_TIMEOUT_NS, ahbBusClockFreq, 1024);
 
@@ -457,7 +452,7 @@ status_t flexspi_config_flash_control_registers(FLEXSPI_Type *base, flexspi_mem_
             // Calculate CS interval
             if (config->commandInterval)
             {
-                flexspi_get_clock(base, kFlexSpiClock_SerialRootClock, &serialClockFrequency);
+                serialClockFrequency = mixspi_get_clock(base);
                 flexspi_get_ticks(&csIntervalTicks, config->commandInterval, serialClockFrequency, 1);
 
                 temp |= FLEXSPI_FLSHCR1_CSINTERVAL(csIntervalTicks);
@@ -782,20 +777,27 @@ status_t flexspi_init(FLEXSPI_Type *base, flexspi_mem_config_t *config)
          *  !!! Important !!!
          *  The module clock must be disabled during clock switch in order to avoid glitch
          */
-        flexspi_clock_gate_disable(base);
+        mixspi_clock_gate_disable(base);
         //flexspi_iomux_config(base, config);
         if (need_safe_freq)
         {
             // Configure FlexSPI serial clock using safe frequency
-            flexspi_clock_config(base, kFlexSpiSerialClk_SafeFreq, kFlexSpiClk_SDR);
+            mixspi_clock_init(base, (mixspi_root_clk_freq_t)kFlexSpiSerialClk_SafeFreq);
         }
         else
         {
             // Configure FlexSPI serial clock with specified frequency
-            flexspi_clock_config(base, config->serialClkFreq, flexspi_is_ddr_mode_enable(config));
+            if (flexspi_is_ddr_mode_enable(config))
+            {
+                mixspi_clock_init(base, flexspi_convert_clock_for_ddr((mixspi_root_clk_freq_t)config->serialClkFreq));
+            }
+            else
+            {
+                mixspi_clock_init(base, (mixspi_root_clk_freq_t)config->serialClkFreq);
+            }
         }
         // Enable FlexSPI Clock Gate
-        flexspi_clock_gate_enable(base);
+        mixspi_clock_gate_enable(base);
 
         base->MCR0 &= ~FLEXSPI_MCR0_MDIS_MASK;
         flexspi_swreset(base);
@@ -901,7 +903,14 @@ status_t flexspi_init(FLEXSPI_Type *base, flexspi_mem_config_t *config)
              */
             base->MCR0 |= FLEXSPI_MCR0_MDIS_MASK;
             // Re-configure FlexSPI Serial clock frequency in order to acheive high performance.
-            flexspi_clock_config(base, config->serialClkFreq, flexspi_is_ddr_mode_enable(config));
+            if (flexspi_is_ddr_mode_enable(config))
+            {
+                mixspi_clock_init(base, flexspi_convert_clock_for_ddr((mixspi_root_clk_freq_t)config->serialClkFreq));
+            }
+            else
+            {
+                mixspi_clock_init(base, (mixspi_root_clk_freq_t)config->serialClkFreq);
+            }
 
             // Re-Configure MCR1
             flexspi_config_mcr1(base, config);
