@@ -10,7 +10,6 @@
 
 #include "snand.h"
 #include "bl_flexspi.h"
-#include "bootloader_common.h"
 #include "fsl_common.h"
 
 /*******************************************************************************
@@ -28,39 +27,40 @@ typedef struct _snand_property_info
 
 #define CUSTOM_LUT_LENGTH                64
 
+//! @brief Memory interface status codes.
+enum _memory_interface_status
+{
+    kStatusMemoryRangeInvalid = MAKE_STATUS(200, 0),
+    kStatusMemoryNotConfigured = MAKE_STATUS(200, 1),
+};
+
 /*! @brief Status for FLEXSPI NAND driver */
 enum _serial_nand_status
 {
-    kStatus_FlexSPINAND_ReadPageFail = MAKE_STATUS(kStatusGroup_FlexSPINAND, 0), /*! < FLEXSPI NAND Read Page Failure */
-    kStatus_FlexSPINAND_ReadCacheFail =
-        MAKE_STATUS(kStatusGroup_FlexSPINAND, 1), /*! < FLEXSPI NAND Read Cache Failure */
-    kStatus_FlexSPINAND_EccCheckFail = MAKE_STATUS(kStatusGroup_FlexSPINAND, 2), /*! < FLEXSPI NAND ECC Cehck Failure */
-    kStatus_FlexSPINAND_PageLoadFail = MAKE_STATUS(kStatusGroup_FlexSPINAND, 3), /*! < FLEXSPI NAND Page Load Failure */
-    kStatus_FlexSPINAND_PageExecuteFail =
-        MAKE_STATUS(kStatusGroup_FlexSPINAND, 4), /*! < FLEXSPI NAND Page Execute Failure */
-    kStatus_FlexSPINAND_EraseBlockFail =
-        MAKE_STATUS(kStatusGroup_FlexSPINAND, 5), /*! < FLEXSPI NAND Erase Block Failure */
-    kStatus_FlexSPINAND_WaitTimeout = MAKE_STATUS(kStatusGroup_FlexSPINAND, 6), /*! < FLEXSPI NAND Write Timeout */
-
-    kStatus_FlexSPINAND_NotSupported = MAKE_STATUS(kStatusGroup_FlexSPINAND, 7), // PageSize over the max buffer size
-    kStatus_FlexSPINAND_FcbUpdateFail = MAKE_STATUS(kStatusGroup_FlexSPINAND, 8),
-    kStatus_FlexSPINAND_DbbtUpdateFail = MAKE_STATUS(kStatusGroup_FlexSPINAND, 9),
-    kStatus_FlexSPINAND_WriteAlignmentError = MAKE_STATUS(kStatusGroup_FlexSPINAND, 10),
-    kStatus_FlexSPINAND_NotFound = MAKE_STATUS(kStatusGroup_FlexSPINAND, 11),
+    kStatus_FlexSPINAND_ReadPageFail = MAKE_STATUS(kStatusGroup_FLEXSPI, 0), /*! < FLEXSPI NAND Read Page Failure */
+    kStatus_FlexSPINAND_ReadCacheFail = MAKE_STATUS(kStatusGroup_FLEXSPI, 1), /*! < FLEXSPI NAND Read Cache Failure */
+    kStatus_FlexSPINAND_EccCheckFail = MAKE_STATUS(kStatusGroup_FLEXSPI, 2), /*! < FLEXSPI NAND ECC Cehck Failure */
+    kStatus_FlexSPINAND_PageLoadFail = MAKE_STATUS(kStatusGroup_FLEXSPI, 3), /*! < FLEXSPI NAND Page Load Failure */
+    kStatus_FlexSPINAND_PageExecuteFail = MAKE_STATUS(kStatusGroup_FLEXSPI, 4), /*! < FLEXSPI NAND Page Execute Failure */
+    kStatus_FlexSPINAND_EraseBlockFail = MAKE_STATUS(kStatusGroup_FLEXSPI, 5), /*! < FLEXSPI NAND Erase Block Failure */
+    kStatus_FlexSPINAND_WaitTimeout = MAKE_STATUS(kStatusGroup_FLEXSPI, 6), /*! < FLEXSPI NAND Write Timeout */
+    kStatus_FlexSPINAND_NotSupported = MAKE_STATUS(kStatusGroup_FLEXSPI, 7), // PageSize over the max buffer size
+    kStatus_FlexSPINAND_WriteAlignmentError = MAKE_STATUS(kStatusGroup_FLEXSPI, 8),
+    kStatus_FlexSPINAND_NotFound = MAKE_STATUS(kStatusGroup_FLEXSPI, 9),
 };
 
 /*
  *  NAND Command index used for customized LUT entries.
  */
-#define NAND_CMD_INDEX_READCHACHE CMD_INDEX_READ
-#define NAND_CMD_INDEX_READSTATUS CMD_INDEX_READSTATUS
-#define NAND_CMD_INDEX_WRITEENABLE CMD_INDEX_WRITEENABLE
-#define NAND_CMD_INDEX_ERASEBLOCK 3
-#define NAND_CMD_INDEX_PROGRAMLOAD CMD_INDEX_WRITE
-#define NAND_CMD_INDEX_READPAGE 5
-#define NAND_CMD_INDEX_READECCSTAT 6
-#define NAND_CMD_INDEX_PROGRAMEXECUTE 7
-#define NAND_CMD_INDEX_READCACHE_ODD 8
+#define NAND_CMD_INDEX_READCHACHE      CMD_INDEX_READ
+#define NAND_CMD_INDEX_READSTATUS      CMD_INDEX_READSTATUS
+#define NAND_CMD_INDEX_WRITEENABLE     CMD_INDEX_WRITEENABLE
+#define NAND_CMD_INDEX_ERASEBLOCK      3
+#define NAND_CMD_INDEX_PROGRAMLOAD     CMD_INDEX_WRITE
+#define NAND_CMD_INDEX_READPAGE        5
+#define NAND_CMD_INDEX_READECCSTAT     6
+#define NAND_CMD_INDEX_PROGRAMEXECUTE  7
+#define NAND_CMD_INDEX_READCACHE_ODD   8
 #define NAND_CMD_INDEX_PROGRAMLOAD_ODD 9
 
 /*
@@ -69,40 +69,40 @@ enum _serial_nand_status
  *      The will take effect if the lut sequences are not customized.
  */
 /* LUT sequence index for READ cache sequence  */
-#define NAND_CMD_LUT_SEQ_IDX_READCACHE CMD_LUT_SEQ_IDX_READ //!< 0
+#define NAND_CMD_LUT_SEQ_IDX_READCACHE       CMD_LUT_SEQ_IDX_READ //!< 0
 /* LUT sequence index for Read Status sequence */
-#define NAND_CMD_LUT_SEQ_IDX_READSTATUS CMD_LUT_SEQ_IDX_READSTATUS //!< 1
+#define NAND_CMD_LUT_SEQ_IDX_READSTATUS      CMD_LUT_SEQ_IDX_READSTATUS //!< 1
 /* LUT sequence index for write enable sequence */
-#define NAND_CMD_LUT_SEQ_IDX_WRITEENABLE CMD_LUT_SEQ_IDX_WRITEENABLE //!< 3
+#define NAND_CMD_LUT_SEQ_IDX_WRITEENABLE     CMD_LUT_SEQ_IDX_WRITEENABLE //!< 3
 /* LUT sequence index for Read cache for odd blocks */
-#define NAND_CMD_LUT_SEQ_IDX_READCACHE_ODD 4 //!< 4
+#define NAND_CMD_LUT_SEQ_IDX_READCACHE_ODD   4 //!< 4
 /* LUT sequence index for erase block */
-#define NAND_CMD_LUT_SEQ_IDX_ERASEBLOCK 5 //!< 5
+#define NAND_CMD_LUT_SEQ_IDX_ERASEBLOCK      5 //!< 5
 /* LUT sequence index for program load */
-#define NAND_CMD_LUT_SEQ_IDX_PROGRAMLOAD CMD_LUT_SEQ_IDX_WRITE //!< 9
+#define NAND_CMD_LUT_SEQ_IDX_PROGRAMLOAD     CMD_LUT_SEQ_IDX_WRITE //!< 9
 /* LUT sequence index for program load for odd blocks */
 #define NAND_CMD_LUT_SEQ_IDX_PROGRAMLOAD_ODD 10 //!< 10
 /**/
-#define NAND_CMD_LUT_SEQ_IDX_READPAGE 11 //!< 11
+#define NAND_CMD_LUT_SEQ_IDX_READPAGE        11 //!< 11
 /* LUT sequence index for read ecc status  */
-#define NAND_CMD_LUT_SEQ_IDX_READECCSTAT 13 //!< 13
+#define NAND_CMD_LUT_SEQ_IDX_READECCSTAT     13 //!< 13
 /* LUT sequence index for program execute */
-#define NAND_CMD_LUT_SEQ_IDX_PROGRAMEXECUTE 14 //!< 14
+#define NAND_CMD_LUT_SEQ_IDX_PROGRAMEXECUTE  14 //!< 14
 
 //!@brief Serial NAND Command Definitions
 enum
 {
-    kSerialNandCmd_WriteEnable = 0x06,
-    kSerialNandCmd_SetFeatures = 0x1F,
-    kSerialNandCmd_GetFeatures = 0x0F,
-    kSerialNandCmd_PageRead = 0x13,
-    kSerialNandCmd_ReadFromCache = 0x0B,
+    kSerialNandCmd_WriteEnable     = 0x06,
+    kSerialNandCmd_SetFeatures     = 0x1F,
+    kSerialNandCmd_GetFeatures     = 0x0F,
+    kSerialNandCmd_PageRead        = 0x13,
+    kSerialNandCmd_ReadFromCache   = 0x0B,
     kSerialNandCmd_ReadFromCacheX4 = 0x6B,
-    kSerialNandCmd_ReadId = 0x9F,
-    kSerialNandCmd_BlockErase = 0xD8,
-    kSerialNandCmd_ProgramLoad = 0x02,
-    kSerialNandCmd_ProgramLoadX4 = 0x32,
-    kSerialNandCmd_ProgramExecute = 0x10,
+    kSerialNandCmd_ReadId          = 0x9F,
+    kSerialNandCmd_BlockErase      = 0xD8,
+    kSerialNandCmd_ProgramLoad     = 0x02,
+    kSerialNandCmd_ProgramLoadX4   = 0x32,
+    kSerialNandCmd_ProgramExecute  = 0x10,
 };
 
 /*
@@ -133,14 +133,6 @@ enum
     kSerialNandPagesPerBlock_128 = 1,
     kSerialNandPagesPerBlock_256 = 2,
     kSerialNandPagesPerBlock_32 = 3,
-};
-
-enum
-{
-    kSerialNandSearchStridePages_64 = 0,
-    kSerialNandSearchStridePages_128 = 1,
-    kSerialNandSearchStridePages_256 = 2,
-    kSerialNandSearchStridePages_32 = 3,
 };
 
 enum
@@ -269,9 +261,6 @@ typedef struct
     //!@brief Program data to specified Serial NAND page via FlexSPI
     status_t flexspi_nand_program_page(
         uint32_t instance, flexspi_nand_config_t *config, uint32_t pageId, uint32_t *src, uint32_t length);
-
-    //
-    status_t flexspi_nand_get_fcb_search_cfg(uint32_t *searchCount, uint32_t *searchStride);
 
     status_t flexspi_nand_get_default_cfg_blk(flexspi_nand_config_t *config);
 

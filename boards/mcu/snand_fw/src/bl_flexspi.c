@@ -10,9 +10,7 @@
 #include <stdbool.h>
 
 #include "bl_flexspi.h"
-#include "bootloader.h"
 #include "fsl_device_registers.h"
-#include "microseconds.h"
 
 /*******************************************************************************
  * Definitions
@@ -628,7 +626,7 @@ status_t flexspi_device_workmode_config(uint32_t instance, flexspi_mem_config_t 
         }
         else
         {
-            flexspi_sw_delay_us(config->waitTimeCfgCommands * 100UL);
+            mixspi_sw_delay_us(config->waitTimeCfgCommands * 100UL);
         }
     } while (0);
 
@@ -730,7 +728,7 @@ status_t flexspi_device_cmd_config(uint32_t instance, flexspi_mem_config_t *conf
                 }
                 else
                 {
-                    flexspi_sw_delay_us(config->waitTimeCfgCommands * 100UL);
+                    mixspi_sw_delay_us(config->waitTimeCfgCommands * 100UL);
                 }
             }
         }
@@ -804,7 +802,7 @@ status_t flexspi_init(uint32_t instance, flexspi_mem_config_t *config)
          *  The module clock must be disabled during clock switch in order to avoid glitch
          */
         flexspi_clock_gate_disable(instance);
-        flexspi_iomux_config(instance, config);
+        //flexspi_iomux_config(instance, config);
         if (need_safe_freq)
         {
             // Configure FlexSPI serial clock using safe frequency
@@ -1343,7 +1341,7 @@ status_t flexspi_device_wait_busy(uint32_t instance,
             {
                 if (remainingMs > 0)
                 {
-                    flexspi_sw_delay_us(1000);
+                    mixspi_sw_delay_us(1000);
                     remainingMs--;
                 }
                 else

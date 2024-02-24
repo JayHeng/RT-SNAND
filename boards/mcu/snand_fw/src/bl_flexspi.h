@@ -11,6 +11,7 @@
 #define __FSL_FLEXSPI_H__
 
 #include "fsl_common.h"
+#include "port_mixspi_info.h"
 
 /**********************************************************************************************************************
  * Definitions
@@ -372,7 +373,7 @@ extern "C"
     //!@brief Get Maximumn clock frequency
     extern status_t flexspi_get_max_supported_freq(uint32_t instance, uint32_t *freq, uint32_t clkMode);
 
-    extern void flexspi_sw_delay_us(uint64_t us);
+//    extern void flexspi_sw_delay_us(uint64_t us);
 
     extern void flexspi_update_padsetting(flexspi_mem_config_t *config, uint32_t driveStrength);
 

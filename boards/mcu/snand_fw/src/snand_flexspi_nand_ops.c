@@ -11,13 +11,19 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "flexspi_nand_flash.h"
+#include "snand_flash.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 // Definitions
 ////////////////////////////////////////////////////////////////////////////////
 
 #define NAND_CMD_LUT_FOR_IP_CMD 1 //!< 1 Dedicated LUT Sequence IP for NAND IP Command
+
+//! @brief Constants for FlexSPI features.
+enum
+{
+    kFlexSpi_AhbMemoryMaxSizeMB = (504u * 1024u * 1024u),
+};
 
 enum
 {
@@ -208,8 +214,7 @@ status_t flexspi_nand_init(uint32_t instance, flexspi_nand_config_t *config)
     return status;
 }
 
-status_t flexspi_nand_read_page(
-    uint32_t instance, flexspi_nand_config_t *config, uint32_t pageId, uint32_t *buffer, uint32_t length)
+status_t flexspi_nand_read_page(uint32_t instance, flexspi_nand_config_t *config, uint32_t pageId, uint32_t *buffer, uint32_t length)
 {
     status_t status = kStatus_InvalidArgument;
     do
@@ -219,7 +224,6 @@ status_t flexspi_nand_read_page(
             break;
         }
         uint32_t baseAddress;
-        uint32_t readAddress;
         flexspi_xfer_t flashXfer;
         bool isEccCheckPass;
         flexspi_mem_config_t *flexspiConfig = &config->memConfig;
@@ -247,7 +251,7 @@ status_t flexspi_nand_read_page(
         if (config->bypassReadStatus)
         {
             // Delay several microseconds
-            flexspi_sw_delay_us(config->readPageTimeUs);
+            mixspi_sw_delay_us(config->readPageTimeUs);
         }
         else
         {
@@ -976,7 +980,7 @@ status_t flexspi_nand_software_reset(uint32_t instance, flexspi_nand_config_t *c
         status = flexspi_command_xfer(instance, &xfer);
 
         // Delay several ms until device is restored to SPI protocol
-        flexspi_sw_delay_us(1000);
+        mixspi_sw_delay_us(1000);
 
     } while (0);
 

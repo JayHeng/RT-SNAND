@@ -6,36 +6,17 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include "spinand_memory.h"
-#include "bootloader.h"
-#include "bootloader_common.h"
+#include "snand_memory.h"
 #include "fsl_device_registers.h"
-#include "memory.h"
-#if BL_FEATURE_SPINAND_MODULE_PERIPHERAL_FLEXSPI
-#include "flexspi_nand_flash.h"
-#endif // BL_FEATURE_SPINAND_MODULE_PERIPHERAL_FLEXSPI
+#include "snand_flash.h"
 #include <string.h>
-#include "bl_context.h"
-#include "crc32.h"
-#include "fsl_assert.h"
-#include "fsl_rtos_abstraction.h"
-#if BL_FEATURE_GEN_KEYBLOB
-#include "bl_keyblob.h"
-#endif // BL_FEATURE_GEN_KEYBLOB
-
-#if BL_FEATURE_SPINAND_MODULE
 
 #ifndef SPINAND_INSTANCE
-#if defined(BL_FEATURE_SPINAND_MODULE_PERIPHERAL_INSTANCE_RUNTIME_SEL) && \
-    BL_FEATURE_SPINAND_MODULE_PERIPHERAL_INSTANCE_RUNTIME_SEL
-#define SPINAND_INSTANCE spinand_get_instance()
-#else
-#define SPINAND_INSTANCE BL_FEATURE_SPINAND_MODULE_PERIPHERAL_INSTANCE
-#endif // BL_FEATURE_SPINAND_MODULE_PERIPHERAL_INSTANCE_RUNTIME_SEL
+#define SPINAND_INSTANCE 0
 #endif
 
 #ifndef SPINAND_ERASE_VERIFY
-#define SPINAND_ERASE_VERIFY BL_FEATURE_SPINAND_MODULE_ERASE_VERIFY
+#define SPINAND_ERASE_VERIFY 1
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -77,14 +58,7 @@ typedef struct _spinand_mem_context
     uint32_t writeBufferOffset;
     uint32_t writeBufferPageAddr;
     uint32_t skippedBlockCount;
-#if BL_FEATURE_GEN_KEYBLOB
-    bool has_keyblob;
-    uint32_t keyblob_offset; //!< Key blob offset in application image
-#endif                       // BL_FEATURE_GEN_KEYBLOB
-#if defined(BL_FEATURE_SPINAND_MODULE_PERIPHERAL_INSTANCE_RUNTIME_SEL) && \
-    BL_FEATURE_SPINAND_MODULE_PERIPHERAL_INSTANCE_RUNTIME_SEL
     uint32_t instance;
-#endif // BL_FEATURE_FLEXSPI_NOR_MODULE_PERIPHERAL_INSTANCE_RUNTIME_SEL
 } spinand_mem_context_t;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -100,14 +74,6 @@ static status_t spinand_mem_block_backup(uint32_t srcPageAddr, uint32_t destBloc
 static bool is_erased_memory(uint32_t pageAddr, uint32_t pageCount);
 #endif
 
-static status_t spinand_mem_load_fcb(uint32_t searchCount, uint32_t searchStride);
-
-static status_t spinand_mem_update_fcb(spinand_fcb_t *config);
-
-static status_t spinand_mem_load_dbbt(spinand_fcb_t *config);
-
-static status_t spinand_mem_update_dbbt(spinand_fcb_t *config);
-
 static status_t spinand_memory_read(uint32_t pageAddr, uint32_t length, uint8_t *buffer);
 
 static status_t spinand_memory_write_and_verify(uint32_t pageAddr, uint32_t length, uint8_t *buffer);
@@ -121,10 +87,6 @@ static status_t spinand_memory_read_page(uint32_t pageAddr, uint32_t length, uin
 static status_t spinand_memory_program_page(uint32_t pageAddr, uint32_t length, uint8_t *buffer);
 
 static status_t spinand_memory_erase_block(uint32_t blockAddr);
-
-static bool is_block_crc32_check_pass(const uint32_t *start, uint32_t length);
-
-static uint32_t calculate_crc32(const uint32_t *start, uint32_t length);
 
 static bool is_spinand_configured(void);
 
@@ -144,102 +106,40 @@ static bool is_read_page_cached(uint32_t pageAddr);
 
 static bool is_write_page_cached(uint32_t pageAddr);
 
-static bool is_nand_address_type_valid(uint32_t type);
-
-static status_t nand_generate_fcb(spinand_fcb_t *fcb, spinand_img_option_t *option);
-
-static status_t check_update_keyblob_info(void *config);
+static status_t nand_generate_fcb(spinand_fcb_t *fcb, serial_nand_config_option_t *option);
 
 ////////////////////////////////////////////////////////////////////////////////
 // Variables
 ////////////////////////////////////////////////////////////////////////////////
+
 static spinand_fcb_t s_spinandFcb;
 
 static spinand_dbbt_t s_spinandDbbt;
 
 static spinand_mem_context_t s_spinandContext = {
     .isConfigured = false,
-    .needToUpdateDbbt = false,
     .skippedBlockCount = 0,
     .isReadBufferValid = false,
     .isWriteBufferValid = false,
- #if defined(BL_FEATURE_SPINAND_MODULE_PERIPHERAL_INSTANCE_RUNTIME_SEL) && \
-    BL_FEATURE_SPINAND_MODULE_PERIPHERAL_INSTANCE_RUNTIME_SEL
-    .instance = BL_FEATURE_SPINAND_MODULE_PERIPHERAL_INSTANCE,
-#endif // BL_FEATURE_SPINAND_MODULE_PERIPHERAL_INSTANCE_RUNTIME_SEL
-};
-
-//! @brief Interface to spi nand memory operations
-const external_memory_region_interface_t g_spiNandMemoryInterface = {
-    .init = spinand_mem_init,
-    .read = spinand_mem_read,
-    .write = spinand_mem_write,
-    .erase = spinand_mem_erase,
-    .config = spinand_mem_config,
-    .flush = spinand_mem_flush,
-    .finalize = spinand_mem_finalize,
+    .instance = 0,
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 // Code
 ////////////////////////////////////////////////////////////////////////////////
 
-//! @brief Get the instance of current flexspi nand
-static uint32_t spinand_get_instance()
-{
-#if defined(BL_FEATURE_SPINAND_MODULE_PERIPHERAL_INSTANCE_RUNTIME_SEL) && \
-    BL_FEATURE_SPINAND_MODULE_PERIPHERAL_INSTANCE_RUNTIME_SEL
-    return s_spinandContext.instance;
-#else
-    return SPINAND_INSTANCE;
-#endif // BL_FEATURE_SPINAND_MODULE_PERIPHERAL_INSTANCE_RUNTIME_SEL
-}
-
-#if defined(BL_FEATURE_SPINAND_MODULE_PERIPHERAL_INSTANCE_RUNTIME_SEL) && \
-    BL_FEATURE_SPINAND_MODULE_PERIPHERAL_INSTANCE_RUNTIME_SEL
-static bool spinand_instance_available(uint32_t inst)
-{
-    if ((inst >= 1) && (inst <= BL_FEATURE_SPINAND_MODULE_MAX_PERIPHERAL_INSTANCE))
-    {
-        return true;
-    }
-    else
-    {
-        return false;
-    }
-}
-#endif // BL_FEATURE_SPINAND_MODULE_PERIPHERAL_INSTANCE_RUNTIME_SEL
-
-bool is_nand_address_type_valid(uint32_t type)
-{
-    bool is_valid = false;
-    if ((type == kNandAddressType_ByteAddress) || (type == kNandAddressType_BlockAddress))
-    {
-        is_valid = true;
-    }
-
-    return is_valid;
-}
-
 // See qspi_memory.h for documentation on this function.
 status_t spinand_mem_init(void)
 {
-    if (get_primary_boot_device() != kBootDevice_FlexSpiNAND)
-    {
-        return kStatus_Fail;
-    }
     status_t status;
 
-#if BL_FEATURE_SPINAND_MODULE_PERIPHERAL_FLEXSPI
     // Load default config block from efuse.
     status = flexspi_nand_get_default_cfg_blk(&s_spinandFcb.config);
     if (status != kStatus_Success)
     {
         return status;
     }
-#else
-#error "Unknown default config"
-#endif // BL_FEATURE_SPINAND_MODULE_PERIPHERAL_FLEXSPI
+
     // Init SPI peripheral to enable fcb read.
     status = spinand_memory_spi_init(&s_spinandFcb.config);
     if (status != kStatus_Success)
@@ -247,149 +147,17 @@ status_t spinand_mem_init(void)
         return status;
     }
 
-    uint32_t searchCount, searchStride;
-#if BL_FEATURE_SPINAND_MODULE_PERIPHERAL_FLEXSPI
-    flexspi_nand_get_fcb_search_cfg(&searchCount, &searchStride);
-#else
-#error "Unknown default fcb search config."
-#endif
-    status = spinand_mem_load_fcb(searchCount, searchStride);
-    if (status != kStatus_Success)
-    {
-        return status;
-    }
-
-    status = spinand_memory_spi_init(&s_spinandFcb.config);
-    if (status != kStatus_Success)
-    {
-        return status;
-    }
-
-    status = spinand_mem_load_dbbt(&s_spinandFcb);
-    if (status != kStatus_Success)
+    //status = spinand_mem_load_dbbt(&s_spinandFcb);
+    //if (status != kStatus_Success)
     {
         // Do not create a new DBBT during init.
         // There is a risk, that the old DBBT is crashed.
         // User needs to re-configure.
-        return status;
+        return kStatus_Fail;
     }
-
-    // All initialization steps are success. SPI NAND can be accessable.
-    s_spinandContext.isConfigured = true;
-
-    // Update external map entry info.
-    uint32_t index;
-    status = find_external_map_index(kMemorySpiNand, &index);
-    if (status != kStatus_Success)
-    {
-        return status;
-    }
-    g_externalMemoryMap[index].basicUnitSize = s_spinandFcb.config.pageDataSize;
-    g_externalMemoryMap[index].basicUnitCount = s_spinandFcb.config.blocksPerDevice * s_spinandFcb.config.pagesPerBlock;
-
-    return status;
 }
 
-#if BL_FEATURE_GEN_KEYBLOB
-status_t check_update_keyblob_info(void *config)
-{
-    status_t status = kStatus_InvalidArgument;
-
-    do
-    {
-        if ((config == NULL) || (s_spinandContext.isConfigured == false))
-        {
-            break;
-        }
-
-        // Try to read Key blob info based on config
-        keyblob_info_t *keyblob_info = (keyblob_info_t *)config;
-        if (keyblob_info->option.B.tag != kKeyBlobInfoOption_Tag)
-        {
-            break;
-        }
-
-        int32_t keyblob_info_type = keyblob_info->option.B.type;
-        if ((keyblob_info_type != kKeyBlobInfoType_Program) && (keyblob_info_type != kKeyBlobInfoType_Update))
-        {
-            break;
-        }
-
-        if (keyblob_info_type == kKeyBlobInfoType_Update)
-        {
-            status = keyblob_update(keyblob_info);
-            if (status != kStatus_Success)
-            {
-                s_spinandContext.has_keyblob = false;
-                break;
-            }
-            s_spinandContext.keyblob_offset = keyblob_info->keyblob_offset;
-            s_spinandContext.has_keyblob = true;
-        }
-        else if (keyblob_info_type == kKeyBlobInfoType_Program)
-        {
-            if (!s_spinandContext.has_keyblob)
-            {
-                break;
-            }
-            uint32_t index = keyblob_info->option.B.image_index;
-            if (index >= kSpiNandMemory_MaxFirmware)
-            {
-                status = kStatus_InvalidArgument;
-                break;
-            }
-
-            uint32_t image_page_start = s_spinandFcb.firmwareTable[index].startPage;
-            uint32_t image_max_page_size = s_spinandFcb.firmwareTable[index].pagesInFirmware;
-
-            uint32_t page_size = s_spinandFcb.config.pageDataSize;
-            uint32_t keyblob_offset = s_spinandContext.keyblob_offset;
-            uint32_t keyblob_addr = image_page_start * page_size + keyblob_offset;
-            uint8_t *keyblob_buffer;
-            uint32_t keyblob_size;
-            status = keyblob_get(&keyblob_buffer, &keyblob_size);
-            if (status != kStatus_Success)
-            {
-                break;
-            }
-
-            // Check key blob address range
-            if ((keyblob_size + keyblob_offset) / page_size > image_max_page_size)
-            {
-                status = kStatusMemoryRangeInvalid;
-                break;
-            }
-
-            // Invalid key blob address, key blob must be page size aligned.
-            if (keyblob_addr & (page_size - 1))
-            {
-                status = kStatusMemoryAlignmentError;
-                break;
-            }
-
-            uint32_t keyblob_page_addr = keyblob_addr / page_size;
-#if BL_FEATURE_FLASH_CHECK_CUMULATIVE_WRITE
-            if (!is_erased_memory(keyblob_page_addr, 1))
-            {
-                status = kStatusMemoryCumulativeWrite;
-                break;
-            }
-#endif
-            status = spinand_memory_write_and_verify(keyblob_page_addr, keyblob_size, keyblob_buffer);
-            if (status != kStatus_Success)
-            {
-                break;
-            }
-
-            status = spinand_mem_flush();
-        }
-    } while (0);
-
-    return status;
-}
-#endif // #if BL_FEATURE_GEN_KEYBLOB
-
-status_t nand_generate_fcb(spinand_fcb_t *fcb, spinand_img_option_t *option)
+status_t nand_generate_fcb(spinand_fcb_t *fcb, serial_nand_config_option_t *option)
 {
     status_t status = kStatus_InvalidArgument;
 
@@ -400,111 +168,15 @@ status_t nand_generate_fcb(spinand_fcb_t *fcb, spinand_img_option_t *option)
             break;
         }
 
-        if ((option->option0.B.size < kNandImgOption_MinSize) || (option->option0.B.size > kNandImgOption_MaxSize))
-        {
-            break;
-        }
-
         memset(fcb, 0, sizeof(spinand_fcb_t));
 
-        // Check wether NAND option is in valid memory range
-        if ((!is_valid_application_location(option->nand_option_addr)) ||
-            (!is_valid_application_location(option->nand_option_addr + sizeof(serial_nand_config_option_t))))
-        {
-            break;
-        }
-
-        serial_nand_config_option_t *nand_option = (serial_nand_config_option_t *)option->nand_option_addr;
-
-        status = flexspi_nand_get_config(SPINAND_INSTANCE, &fcb->config, nand_option);
+        status = flexspi_nand_get_config(SPINAND_INSTANCE, &fcb->config, option);
         if (status != kStatus_Success)
         {
             break;
         }
 
-        uint32_t address_type = option->option0.B.address_type;
-        if (is_nand_address_type_valid(address_type))
-        {
-            s_spinandContext.nandAddressType = address_type;
-        }
-        else
-        {
-            s_spinandContext.nandAddressType = kNandAddressType_ByteAddress;
-        }
-
-        uint32_t image_copies = option->option0.B.size - 2;
-        if (image_copies > kSpiNandMemory_MaxFirmware)
-        {
-            break;
-        }
-        uint32_t search_stride = option->option0.B.search_stride;
-        uint32_t search_count = option->option0.B.search_count;
-
-        switch (search_stride)
-        {
-            case kSerialNandSearchStridePages_64:
-                search_stride = 64;
-                break;
-            case kSerialNandSearchStridePages_128:
-                search_stride = 128;
-                break;
-            case kSerialNandSearchStridePages_256:
-                search_stride = 256;
-                break;
-            case kSerialNandSearchStridePages_32:
-                search_stride = 32;
-                break;
-            default:
-                break;
-        }
-
-        if (search_stride < 32)
-        {
-            break;
-        }
-
-        if ((search_count < 1) || (search_count > 4))
-        {
-            break;
-        }
-
-        fcb->searchStride = search_stride;
-        fcb->searchCount = search_count;
-        fcb->fingerprint = kTag_SPINAND_FCB;
-        fcb->version = kTag_SPINAND_FCB_Version;
-        fcb->DBBTSerachAreaStartPage = search_count * search_stride;
-        fcb->firmwareCopies = image_copies;
-
-        uint32_t image_starting_page;
-        uint32_t image_page_count;
-        uint32_t min_allowed_image_start_block;
-        for (uint32_t i = 0; i < image_copies; i++)
-        {
-            // Do parameter check here
-            if (i == 0)
-            {
-                // Image must start after FCB + DBBT region
-                min_allowed_image_start_block = (search_stride / fcb->config.pagesPerBlock) * search_count * 2;
-            }
-            else
-            {
-                min_allowed_image_start_block =
-                    option->image_info[i - 1].block_id + option->image_info[i - 1].block_count;
-            }
-
-            if (option->image_info[i].block_id < min_allowed_image_start_block)
-            {
-                break;
-            }
-
-            image_starting_page = option->image_info[i].block_id * fcb->config.pagesPerBlock;
-            image_page_count = option->image_info[i].block_count * fcb->config.pagesPerBlock;
-            fcb->firmwareTable[i].pagesInFirmware = image_page_count;
-            fcb->firmwareTable[i].startPage = image_starting_page;
-        }
-
-        // Calculate CRC
-        fcb->crcChecksum = calculate_crc32(&fcb->fingerprint, sizeof(*fcb) - sizeof(fcb->crcChecksum));
+        s_spinandContext.nandAddressType = kNandAddressType_ByteAddress;
 
         status = kStatus_Success;
 
@@ -518,90 +190,20 @@ status_t spinand_mem_config(uint32_t *config)
     status_t status = kStatus_InvalidArgument;
 
     bool isNandConfig = false;
+    
+    serial_nand_config_option_t *option = (serial_nand_config_option_t *)config;
 
     do
     {
-        uint32_t startAddr = (uint32_t)config;
-        uint32_t endAddr = startAddr + sizeof(spinand_fcb_t) - 1;
-        // Should check the config is in valid internal space.
-        if ((!is_valid_application_location(startAddr)) || (!is_valid_application_location(endAddr)))
+        status = nand_generate_fcb(&s_spinandFcb, option);
+        if (status != kStatus_Success)
         {
             break;
         }
 
-        // Try to get FCB based on full FCCB
-        const spinand_fcb_t *firmwareConfig = (const spinand_fcb_t *)config;
-        // Try to get FCB based on an option
-        spinand_img_option_t *img_option = (spinand_img_option_t *)config;
-
-#if BL_FEATURE_GEN_KEYBLOB
-        keyblob_info_t *keyblob_info = (keyblob_info_t *)config;
-#endif // BL_FEATURE_GEN_KEYBLOB
-#if defined(BL_FEATURE_SPINAND_MODULE_PERIPHERAL_INSTANCE_RUNTIME_SEL) && \
-    BL_FEATURE_SPINAND_MODULE_PERIPHERAL_INSTANCE_RUNTIME_SEL
-        if (MAGIC_NUMBER_SPINAND_PRECFG == img_option->option0.P.magic)
-        {
-            if (!spinand_instance_available(img_option->option0.P.cf9_field))
-            {
-                status = kStatus_InvalidArgument;
-                break;
-            }
-
-            if (img_option->option0.P.cf9_field != s_spinandContext.instance)
-            {
-                s_spinandContext.instance = img_option->option0.P.cf9_field;
-            }
-            status = kStatus_Success;
-            break;
-        }
-        else if (img_option->option0.B.tag == kNandImgOption_Tag)
-#else
-        if (img_option->option0.B.tag == kNandImgOption_Tag)
-#endif // BL_FEATURE_SPINAND_MODULE_PERIPHERAL_INSTANCE_RUNTIME_SEL
-        {
-            status = nand_generate_fcb(&s_spinandFcb, img_option);
-            if (status != kStatus_Success)
-            {
-                break;
-            }
-
-            // First, mark SPI NAND as not configured.
-            s_spinandContext.isConfigured = false;
-            isNandConfig = true;
-        }
-        else if (firmwareConfig->fingerprint == kTag_SPINAND_FCB)
-        {
-            // CRC check to ensure the FCB is valid.
-            if (!is_block_crc32_check_pass(config, sizeof(spinand_fcb_t)))
-            {
-                break;
-            }
-            // All FCB check is passed. Then start to configure SPI NAND.
-            // First, mark SPI NAND as not configured.
-            s_spinandContext.isConfigured = false;
-            // Over-write FCB.
-            memcpy(&s_spinandFcb, firmwareConfig, sizeof(spinand_fcb_t));
-
-            isNandConfig = true;
-        }
-#if BL_FEATURE_GEN_KEYBLOB
-        else if (keyblob_info->option.B.tag == kKeyBlobInfoOption_Tag)
-        {
-            status = check_update_keyblob_info(config);
-            if (status != kStatus_Success)
-            {
-                break;
-            }
-            else
-            {
-                status = kStatus_Success;
-            }
-        }
-#endif
-        else
-        {
-            break;
-        }
+        // First, mark SPI NAND as not configured.
+        s_spinandContext.isConfigured = false;
+        isNandConfig = true;
 
         if (isNandConfig)
         {
@@ -610,38 +212,10 @@ status_t spinand_mem_config(uint32_t *config)
             {
                 break;
             }
-            // Load DBBT from the address FCB tells.
-            status = spinand_mem_load_dbbt(&s_spinandFcb);
-            if (status != kStatus_Success)
-            {
-                // Load failure means a new dbbt need to be created.
-                spinand_mem_creat_empty_dbbt();
-                // Update new DBBT to SPI NAND.
-                status = spinand_mem_update_dbbt(&s_spinandFcb);
-                if (status != kStatus_Success)
-                {
-                    break;
-                }
-            }
-            // Update new FCB to SPI NAND
-            status = spinand_mem_update_fcb(&s_spinandFcb);
 
-            if (status == kStatus_Success)
-            {
-                // All configuration steps are success. SPI NAND can be accessable.
-                s_spinandContext.isConfigured = true;
-
-                // Update external map entry info.
-                uint32_t index;
-                status = find_external_map_index(kMemorySpiNand, &index);
-                if (status != kStatus_Success)
-                {
-                    return status;
-                }
-                g_externalMemoryMap[index].basicUnitSize = s_spinandFcb.config.pageDataSize;
-                g_externalMemoryMap[index].basicUnitCount =
-                    s_spinandFcb.config.blocksPerDevice * s_spinandFcb.config.pagesPerBlock;
-            }
+            spinand_mem_creat_empty_dbbt();
+            // All configuration steps are success. SPI NAND can be accessable.
+            s_spinandContext.isConfigured = true;
         }
     } while (0);
 
@@ -858,12 +432,6 @@ status_t spinand_mem_write(uint32_t address, uint32_t length, const uint8_t *buf
             pageAddr = address / pageSize;
         }
 
-        // Ensure DBBT and FCB cannot be overwritedn by normal write operation
-        if (pageAddr < s_spinandFcb.firmwareTable[0].startPage)
-        {
-            break;
-        }
-
         // Skip the skipped blocks during a read operation.
         // No need to change the columnAddr.
         skip_bad_blocks(&pageAddr);
@@ -978,11 +546,6 @@ status_t spinand_mem_finalize(void)
 {
     status_t status = kStatus_Success;
 
-    // If a bad block is discovered during the operation, then need to update the DBBT to SPI NAND.
-    if (s_spinandContext.needToUpdateDbbt)
-    {
-        status = spinand_mem_update_dbbt(&s_spinandFcb);
-    }
     // Mark buffer to invalid.
     s_spinandContext.isWriteBufferValid = false;
     s_spinandContext.isReadBufferValid = false;
@@ -1032,13 +595,6 @@ status_t spinand_mem_erase(uint32_t address, uint32_t length)
                          startBlockAddr + 1;
         }
 
-        // Ensure the FCB and DBBT cannot be erased by erase command
-        uint32_t minAllowedEraseBlockId = s_spinandFcb.firmwareTable[0].startPage / s_spinandFcb.config.pagesPerBlock;
-        if (startBlockAddr < minAllowedEraseBlockId)
-        {
-            break;
-        }
-
         // Due to bad block is skipped,
         // then also need to check if the block to erase is not cross the memory end.
         while (blockCount && (startBlockAddr < totalBlocks))
@@ -1057,16 +613,6 @@ status_t spinand_mem_erase(uint32_t address, uint32_t length)
                 }
             }
             startBlockAddr++;
-        }
-
-        // If a new bad block is discovered, update DBBT to SPI NAND.
-        if (s_spinandContext.needToUpdateDbbt)
-        {
-            status = spinand_mem_update_dbbt(&s_spinandFcb);
-            if (status != kStatus_Success)
-            {
-                break;
-            }
         }
     } while (0);
 
@@ -1096,70 +642,6 @@ status_t spinand_mem_erase_all(void)
             }
         }
         startBlockAddr++;
-    }
-
-    // If a new bad block is discovered, update DBBT to SPI NAND.
-    if (s_spinandContext.needToUpdateDbbt)
-    {
-        status_t status = spinand_mem_update_dbbt(&s_spinandFcb);
-        if (status != kStatus_Success)
-        {
-            return status;
-        }
-    }
-
-    return kStatus_Success;
-}
-
-//! @brief Get Property from flexspi driver
-status_t spinand_get_property(uint32_t whichProperty, uint32_t *value)
-{
-    if (value == NULL)
-    {
-        return kStatus_InvalidArgument;
-    }
-
-    switch (whichProperty)
-    {
-        case kSPINANDProperty_InitStatus:
-            *value = is_spinand_configured() ? kStatus_Success : kStatusMemoryNotConfigured;
-            break;
-
-        case kSPINANDProperty_StartAddress:
-            *value = kSPINANDStartAddress;
-            break;
-
-        case kSPINANDrProperty_TotalFlashSizeInKBytes:
-        {
-            uint32_t totalFlashSizeInKbytes =
-                (s_spinandFcb.config.memConfig.sflashA1Size + s_spinandFcb.config.memConfig.sflashA2Size +
-                 s_spinandFcb.config.memConfig.sflashB1Size + s_spinandFcb.config.memConfig.sflashB2Size) /
-                2;
-
-            *value = totalFlashSizeInKbytes / 1024;
-        }
-        break;
-
-        case kSPINANDProperty_PageSize:
-            *value = s_spinandFcb.config.pageDataSize;
-            break;
-
-        case kSPINANDProperty_BlockSize:
-            *value = s_spinandFcb.config.pageDataSize * s_spinandFcb.config.pagesPerBlock;
-            break;
-
-        case kSPINANDProperty_TotalFlashSize:
-        {
-            uint32_t totalFlashSize =
-                s_spinandFcb.config.memConfig.sflashA1Size + s_spinandFcb.config.memConfig.sflashA2Size +
-                s_spinandFcb.config.memConfig.sflashB1Size + s_spinandFcb.config.memConfig.sflashB2Size;
-
-            *value = totalFlashSize;
-        }
-        break;
-
-        default: // catch inputs that are not recognized
-            return kStatus_InvalidArgument;
     }
 
     return kStatus_Success;
@@ -1329,211 +811,6 @@ static bool is_erased_memory(uint32_t pageAddr, uint32_t pageCount)
 }
 #endif // #if BL_FEATURE_FLASH_CHECK_CUMULATIVE_WRITE
 
-static status_t spinand_mem_load_fcb(uint32_t searchCount, uint32_t searchStride)
-{
-    status_t status;
-
-    uint16_t i;
-    uint32_t pageAddr;
-
-    for (i = 0, pageAddr = 0; i < searchCount; i++, pageAddr += searchStride)
-    {
-        // Currently, No DBBT is available. Just read it. CRC check will ensure it is correct.
-        // Do not read it to s_spinandFcb directly, it will over-write s_spinandFcb.config
-        // Which contains the default config.
-        status = spinand_memory_read(pageAddr, sizeof(spinand_fcb_t), (uint8_t *)&s_spinandContext.readBuffer[0]);
-        // Read failed, then skip to next position.
-        if (status != kStatus_Success)
-        {
-            continue;
-        }
-        // else reading FCB is success.
-        spinand_fcb_t *config = (spinand_fcb_t *)s_spinandContext.readBuffer;
-        // Check the FCB tag and version.
-        if ((config->fingerprint != kTag_SPINAND_FCB) || (config->version != kTag_SPINAND_FCB_Version))
-        {
-            // Invalid tag and version, skip to next position.
-            continue;
-        }
-        // else correct tag and version.
-
-        // CRC check to ensure the FCB is correct.
-        if (is_block_crc32_check_pass((uint32_t *)config, sizeof(spinand_fcb_t)))
-        {
-            // CRC check passed, find the FCB.
-            memcpy(&s_spinandFcb, config, sizeof(spinand_fcb_t));
-            return kStatus_Success;
-        }
-        // else CRC check failed and continue.
-    }
-    return kStatus_Fail;
-}
-
-status_t spinand_mem_update_fcb(spinand_fcb_t *config)
-{
-    // No bad block checking while updating FCB.
-    // ECC and CRC will ensure the accuracy.
-    assert(config);
-
-    status_t status, returnStatus = kStatus_FlexSPINAND_DbbtUpdateFail;
-
-    uint32_t i;
-    uint32_t pageAddr;
-
-    uint32_t searchCount = config->searchCount;
-    uint32_t searchStride = config->searchStride;
-
-    uint32_t blockCount = searchStride * searchCount / config->config.pagesPerBlock;
-    // Update FCB if the FCB in SPI NAND doesn't match the new one, such design will avoid updating FCB frequently.
-    bool fcb_match = true;
-    for (i = 0, pageAddr = 0; i < searchCount; i++, pageAddr += searchStride)
-    {
-        status = spinand_memory_read(pageAddr, sizeof(spinand_fcb_t), (uint8_t *)&s_spinandContext.readBuffer[0]);
-        if (status != kStatus_Success)
-        {
-            fcb_match = false;
-            break;
-        }
-        if (memcmp(s_spinandContext.readBuffer, config, sizeof(spinand_fcb_t)) != 0)
-        {
-            fcb_match = false;
-            break;
-        }
-    }
-
-    if (!fcb_match)
-    {
-        // Erase. Stride can be less than 1 block size, then need to erase the whole region firstly.
-        for (i = 0; i < blockCount; i++)
-        {
-            // No need to verify the erase.
-            // None-erased bits will cause write failed, and skip to next position.
-            spinand_memory_erase_block(i);
-        }
-
-        // Write FCB back to SPI NAND.
-        for (i = 0, pageAddr = 0; i < searchCount; i++, pageAddr += searchStride)
-        {
-            status = spinand_memory_write_and_verify(pageAddr, sizeof(spinand_fcb_t), (uint8_t *)config);
-            if (status != kStatus_Success)
-            {
-                // Erase even it might be a bad block, to ensure the data in good bits will not be read when loading
-                // DBBT.
-                // Only erase and not verify it.
-                spinand_memory_erase_block(pageAddr / config->config.pagesPerBlock);
-                continue;
-            }
-            else
-            {
-                // If there is one updated success, the whole progress is success.
-                returnStatus = kStatus_Success;
-                // Do not return. Should update FCB to all the positions, in case bad block generated.
-                // return kStatus_Success;
-            }
-        } // for (i = 0, pageAddr = 0; i < searchCount; i++, pageAddr += searchStride)
-    }     // if (!fcb_match)
-    else
-    {
-        returnStatus = kStatus_Success;
-    }
-    return returnStatus;
-}
-
-static status_t spinand_mem_load_dbbt(spinand_fcb_t *config)
-{
-    assert(config);
-
-    status_t status;
-
-    uint16_t i;
-    uint32_t pageAddr;
-
-    s_spinandDbbt.fingerprint = 0; // Mark dbbt invalid.
-
-    uint32_t searchCount = config->searchCount;
-    uint32_t searchStride = config->searchStride;
-
-    for (i = 0, pageAddr = config->DBBTSerachAreaStartPage; (i < searchCount) && (i < 8); i++, pageAddr += searchStride)
-    {
-        // Currently, No DBBT is available. Just read it. CRC check will ensure it is correct.
-        status = spinand_memory_read(pageAddr, sizeof(spinand_dbbt_t), (uint8_t *)&s_spinandDbbt);
-        // Read is failed, then skip to next position.
-        if (status != kStatus_Success)
-        {
-            continue;
-        }
-        // else reading is success.
-
-        // Check DBBT tag.
-        if ((s_spinandDbbt.fingerprint != kTag_SPINAND_DBBT) || (s_spinandDbbt.version != kTag_SPINAND_DBBT_Version))
-        {
-            // Invalid tag, skip to next position.
-            continue;
-        }
-        // else valid tag.
-
-        // CRC check to ensure the data is correct.
-        if (is_block_crc32_check_pass((uint32_t *)&s_spinandDbbt, sizeof(spinand_dbbt_t)))
-        {
-            // CRC check passed, find the DBBT.
-            return kStatus_Success;
-        }
-        // else means CRC check is failed, continue.
-    }
-    return kStatus_Fail;
-}
-
-status_t spinand_mem_update_dbbt(spinand_fcb_t *config)
-{
-    // No bad block checking while updating DBBT.
-    // ECC and CRC will ensure the accuracy.
-    assert(config);
-
-    status_t status, returnStatus = kStatus_FlexSPINAND_DbbtUpdateFail;
-
-    uint16_t i;
-    uint32_t pageAddr;
-
-    uint32_t searchCount = config->searchCount;
-    uint32_t searchStride = config->searchStride;
-
-    uint32_t blockCount = searchStride * searchCount / config->config.pagesPerBlock;
-    uint32_t blockStart = config->DBBTSerachAreaStartPage / config->config.pagesPerBlock;
-    // Erase. Stride can be less than 1 block size, then need to erase the whole region firstly.
-    for (i = 0; i < blockCount; i++)
-    {
-        // No need to verify the erase.
-        // None-erased bits will cause write failed, and skip to next position.
-        spinand_memory_erase_block(blockStart + i);
-    }
-
-    // Update CRC value before programming
-    s_spinandDbbt.crcChecksum =
-        calculate_crc32(&s_spinandDbbt.fingerprint, sizeof(spinand_dbbt_t) - sizeof(s_spinandDbbt.crcChecksum));
-
-    // Write DBBT back to SPI NAND.
-    for (i = 0, pageAddr = config->DBBTSerachAreaStartPage; i < searchCount; i++, pageAddr += searchStride)
-    {
-        status = spinand_memory_write_and_verify(pageAddr, sizeof(spinand_dbbt_t), (uint8_t *)&s_spinandDbbt);
-        if (status != kStatus_Success)
-        {
-            // Erase even it might be a bad block, to ensure the data in good bits will not be read when loading DBBT.
-            // Only erase and not verify it.
-            spinand_memory_erase_block(pageAddr / config->config.pagesPerBlock);
-            continue;
-        }
-        else
-        {
-            s_spinandContext.needToUpdateDbbt = false;
-            // If there is one updated success, the whole progress is success.
-            returnStatus = kStatus_Success;
-            // Do not return. Should update DBBT to all the strides, in case bad block generated.
-            // return kStatus_Success;
-        }
-    }
-    return returnStatus;
-}
-
 static status_t spinand_memory_read(uint32_t pageAddr, uint32_t length, uint8_t *buffer)
 {
     assert(buffer);
@@ -1623,62 +900,22 @@ status_t spinand_memory_erase_and_verify(uint32_t blockAddr)
 
 status_t spinand_memory_spi_init(flexspi_nand_config_t *config)
 {
-    assert(config);
-#if BL_FEATURE_SPINAND_MODULE_PERIPHERAL_FLEXSPI
     return flexspi_nand_init(SPINAND_INSTANCE, config);
-#else
-#error "Unknown peripheral init function."
-#endif
 }
 
 static status_t spinand_memory_read_page(uint32_t pageAddr, uint32_t length, uint8_t *buffer)
 {
-#if BL_FEATURE_SPINAND_MODULE_PERIPHERAL_FLEXSPI
     return flexspi_nand_read_page(SPINAND_INSTANCE, &s_spinandFcb.config, pageAddr, (uint32_t *)buffer, length);
-#else
-#error "Unsupported Peripheral for SPI NAND"
-#endif // BL_FEATURE_SPINAND_MODULE_PERIPHERAL_FLEXSPI
 }
 
 static status_t spinand_memory_program_page(uint32_t pageAddr, uint32_t length, uint8_t *buffer)
 {
-#if BL_FEATURE_SPINAND_MODULE_PERIPHERAL_FLEXSPI
     return flexspi_nand_program_page(SPINAND_INSTANCE, &s_spinandFcb.config, pageAddr, (uint32_t *)buffer, length);
-#else
-#error "Unsupported Peripheral for SPI NAND"
-#endif // BL_FEATURE_SPINAND_MODULE_PERIPHERAL_FLEXSPI
 }
 
 static status_t spinand_memory_erase_block(uint32_t blockAddr)
 {
-#if BL_FEATURE_SPINAND_MODULE_PERIPHERAL_FLEXSPI
     return flexspi_nand_erase_block(SPINAND_INSTANCE, &s_spinandFcb.config, blockAddr);
-#else
-#error "Unsupported Peripheral for SPI NAND"
-#endif // BL_FEATURE_SPINAND_MODULE_PERIPHERAL_FLEXSPI
-}
-
-static bool is_block_crc32_check_pass(const uint32_t *start, uint32_t length)
-{
-#if TEST_SKIP_CRC
-    // Note! Only for testing.
-    return true;
-#else
-    // First word is the expected data, the left is the data to calculate.
-    return calculate_crc32(&start[1], length - sizeof(uint32_t)) == start[0];
-#endif // TEST_SKIP_CRC
-}
-
-static uint32_t calculate_crc32(const uint32_t *start, uint32_t length)
-{
-    uint32_t crc32CalculatedValue;
-    crc32_data_t crcInfo;
-    crc32_init(&crcInfo);
-
-    crc32_update(&crcInfo, (uint8_t *)start, length);
-    crc32_finalize(&crcInfo, &crc32CalculatedValue);
-
-    return crc32CalculatedValue;
 }
 
 static bool is_spinand_configured(void)
@@ -1692,11 +929,7 @@ static status_t spinand_mem_creat_empty_dbbt(void)
     // Fill DBBT to all 0xFFs.
     memset(&s_spinandDbbt, kFlashDefaultPattern, sizeof(spinand_dbbt_t));
 
-    s_spinandDbbt.fingerprint = kTag_SPINAND_DBBT;     // DBBT tag.
-    s_spinandDbbt.version = kTag_SPINAND_DBBT_Version; // DBBT Version.
     s_spinandDbbt.badBlockNumber = 0;
-    s_spinandDbbt.crcChecksum =
-        calculate_crc32(&s_spinandDbbt.fingerprint, sizeof(spinand_dbbt_t) - sizeof(s_spinandDbbt.crcChecksum));
 
     return kStatus_Success;
 }
@@ -1720,7 +953,6 @@ static status_t bad_block_discovered(uint32_t blockAddr)
     if (s_spinandDbbt.badBlockNumber < kSpiNandMemory_MaxDBBTSize)
     {
         s_spinandDbbt.badBlockTable[s_spinandDbbt.badBlockNumber++] = blockAddr;
-        s_spinandContext.needToUpdateDbbt = true;
         return kStatus_Success;
     }
     else
@@ -1757,7 +989,6 @@ static bool is_write_page_cached(uint32_t pageAddr)
     return (s_spinandContext.writeBufferPageAddr == pageAddr) && (s_spinandContext.isWriteBufferValid);
 }
 
-#endif // BL_FEATURE_SPINAND_MODULE
 
 ////////////////////////////////////////////////////////////////////////////////
 // EOF
