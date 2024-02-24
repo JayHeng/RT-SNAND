@@ -11,6 +11,7 @@
  * Definitions
  ******************************************************************************/
 
+#define EXAMPLE_FLASH_PAGE_SIZE 0x800
 
 /*******************************************************************************
  * Prototypes
@@ -21,6 +22,9 @@
  * Variables
  ******************************************************************************/
 
+uint32_t g_flashRwBuffer[EXAMPLE_FLASH_PAGE_SIZE/4];
+
+uint32_t g_flashRwBuffer2[EXAMPLE_FLASH_PAGE_SIZE/4];
 
 /*******************************************************************************
  * Code
@@ -53,4 +57,15 @@ void snand_main(void)
     
     spinand_mem_config((uint32_t *)&nandOpt);
 
+    for (uint32_t idx = 0; idx < EXAMPLE_FLASH_PAGE_SIZE / sizeof(uint32_t); idx++)
+    {
+        g_flashRwBuffer[idx] = 0 + idx * sizeof(uint32_t);
+    }
+
+    spinand_mem_erase(0x0, 0x800);
+
+    spinand_mem_write(0x0, 0x800, (const uint8_t *)&g_flashRwBuffer);
+    spinand_mem_flush();
+
+    spinand_mem_read(0x0, 0x800, (uint8_t *)&g_flashRwBuffer2);
 }
