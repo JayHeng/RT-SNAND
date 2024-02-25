@@ -35,7 +35,7 @@ int main(void)
     BOARD_InitBootClocks();
     BOARD_InitDebugConsole();
 
-    snand_printf("\r\nSNAND: Target RW612.\r\n");
+    snand_printf("\r\nSNAND: Target RW610.\r\n");
     snand_printf("\r\n-------------------------------------\r\n");
     snand_main();
     snand_printf("-------------------------------------\r\n");

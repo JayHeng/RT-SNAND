@@ -155,13 +155,13 @@ static void mixspi_pin_init(FLEXSPI_Type *base, flexspi_port_t port, flexspi_pad
 //!@brief Gate on the clock for the FlexSPI peripheral
 static void mixspi_clock_gate_enable(FLEXSPI_Type *base)
 {
-    CCM->CCGR6 |= CCM_CCGR6_CG5_MASK;
+    CLOCK_EnableClock(kCLOCK_FlexSpi);
 }
 
 //!@brief Gate off the clock the FlexSPI peripheral
 static void mixspi_clock_gate_disable(FLEXSPI_Type *base)
 {
-    CCM->CCGR6 &= (uint32_t)~CCM_CCGR6_CG5_MASK;
+    CLOCK_DisableClock(kCLOCK_FlexSpi);
 }
 
 static void mixspi_clock_init(FLEXSPI_Type *base, mixspi_root_clk_freq_t clkFreq)
