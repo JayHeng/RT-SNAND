@@ -11,6 +11,7 @@
 #include "pin_mux.h"
 #include "clock_config.h"
 #include "board.h"
+#include "snand.h"
 
 /*******************************************************************************
  * Definitions
@@ -29,18 +30,17 @@
  */
 int main(void)
 {
-    char ch;
-
     /* Init board hardware. */
     BOARD_InitBootPins();
     BOARD_InitBootClocks();
     BOARD_InitDebugConsole();
 
-    PRINTF("hello world.\r\n");
+    snand_printf("\r\nSNAND: Target i.MXRT600.\r\n");
+    snand_printf("\r\n-------------------------------------\r\n");
+    snand_main();
+    snand_printf("-------------------------------------\r\n");
 
     while (1)
     {
-        ch = GETCHAR();
-        PUTCHAR(ch);
     }
 }
