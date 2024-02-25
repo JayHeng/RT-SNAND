@@ -496,11 +496,15 @@ status_t flexspi_config_ahb_buffers(FLEXSPI_Type *base, flexspi_mem_config_t *co
 
         if (config->deviceType == kFlexSpiDeviceType_SerialNOR)
         {
+#if FLEXSPI_AHBCR_APAREN_MASK
             // Configure AHBCR
             temp = base->AHBCR & (~FLEXSPI_AHBCR_APAREN_MASK);
+#else
+            temp = base->AHBCR;
+#endif
             // Remove alignment limitation when Flash device works under DDR mode.
             temp |= FLEXSPI_AHBCR_READADDROPT_MASK;
-#if FLEXSPI_FEATURE_HAS_PARALLEL_MODE
+#if FLEXSPI_FEATURE_HAS_PARALLEL_MODE && FLEXSPI_AHBCR_APAREN_MASK
             if (flexspi_is_parallel_mode(config))
             {
                 temp |= FLEXSPI_AHBCR_APAREN_MASK;
@@ -977,11 +981,13 @@ status_t flexspi_command_xfer(FLEXSPI_Type *base, flexspi_xfer_t *xfer)
         }
 
         uint32_t temp = 0;
+#if FLEXSPI_IPCR1_IPAREN_MASK
 #if !FLEXSPI_FEATURE_HAS_PARALLEL_MODE
         bool isParallelMode = false;
 #else
         bool isParallelMode = xfer->isParallelModeEnable;
 #endif // FLEXSPI_FEATURE_HAS_PARALLEL_MODE
+#endif
 
         flexspi_wait_until_ip_idle(base);
 
@@ -1004,8 +1010,10 @@ status_t flexspi_command_xfer(FLEXSPI_Type *base, flexspi_xfer_t *xfer)
             temp = FLEXSPI_IPCR1_IDATSZ(xfer->rxSize);
         }
 
-        temp |= FLEXSPI_IPCR1_ISEQID(xfer->seqId) | FLEXSPI_IPCR1_ISEQNUM(xfer->seqNum - 1) |
-                FLEXSPI_IPCR1_IPAREN((uint32_t)isParallelMode);
+        temp |= FLEXSPI_IPCR1_ISEQID(xfer->seqId) | FLEXSPI_IPCR1_ISEQNUM(xfer->seqNum - 1);
+#if FLEXSPI_IPCR1_IPAREN_MASK
+        temp |= FLEXSPI_IPCR1_IPAREN((uint32_t)isParallelMode);
+#endif
 
         base->IPCR1 = temp;
 
