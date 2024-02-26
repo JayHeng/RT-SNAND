@@ -852,7 +852,7 @@ status_t flexspi_init(FLEXSPI_Type *base, flexspi_mem_config_t *config)
         // Configure MCR2
         base->MCR2 &= ~FLEXSPI_MCR2_SAMEDEVICEEN_MASK;
 
-#if FLEXSPI_ENABLE_NO_CMD_MODE_SUPPORT
+#if FLEXSPI_ENABLE_NO_CMD_MODE_SUPPORT && FLEXSPI_MCR2_SCKBDIFFOPT_MASK
         // If this condition meets, it means FlexSPI PORT B exists, SCKB pads used as PORTB SCK with be used a inverted
         // SCK for PORTA
         // Enable differential clock as needed.

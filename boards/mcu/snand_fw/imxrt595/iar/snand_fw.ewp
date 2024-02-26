@@ -62,7 +62,7 @@
                 </option>
                 <option>
                     <name>RTDescription</name>
-                    <state>0</state>
+                    <state>A compact configuration of the C/C++14 runtime library. No locale interface, C locale, no file descriptor support, no multibytes in printf and scanf, and no hex floats in strtod.</state>
                 </option>
                 <option>
                     <name>OGProductVersion</name>
@@ -99,7 +99,7 @@
                 <option>
                     <name>GBECoreSlave</name>
                     <version>33</version>
-                    <state>58</state>
+                    <state>61</state>
                 </option>
                 <option>
                     <name>OGUseCmsis</name>
@@ -189,7 +189,7 @@
                 <option>
                     <name>TrustZoneModes</name>
                     <version>0</version>
-                    <state>1</state>
+                    <state>0</state>
                 </option>
                 <option>
                     <name>OGAarch64Abi</name>
@@ -353,6 +353,7 @@
                 <option>
                     <name>CCIncludePath2</name>
                     <state>$PROJ_DIR$/..</state>
+                    <state>$PROJ_DIR$/../../src</state>
                     <state>$PROJ_DIR$/../../../../../devices/MIMXRT595S/drivers</state>
                     <state>$PROJ_DIR$/../../../../../devices/MIMXRT595S</state>
                     <state>$PROJ_DIR$/../../../../../devices/MIMXRT595S/utilities/str</state>
@@ -1236,7 +1237,7 @@
                 <option>
                     <name>GFPUCoreSlave2</name>
                     <version>33</version>
-                    <state>58</state>
+                    <state>61</state>
                 </option>
                 <option>
                     <name>OGCMSISPackSelectDevice</name>
@@ -1451,6 +1452,7 @@
                 <option>
                     <name>CCIncludePath2</name>
                     <state>$PROJ_DIR$/..</state>
+                    <state>$PROJ_DIR$/../../src</state>
                     <state>$PROJ_DIR$/../../../../../devices/MIMXRT595S/drivers</state>
                     <state>$PROJ_DIR$/../../../../../devices/MIMXRT595S</state>
                     <state>$PROJ_DIR$/../../../../../devices/MIMXRT595S/utilities/str</state>
@@ -2334,7 +2336,7 @@
                 <option>
                     <name>GFPUCoreSlave2</name>
                     <version>33</version>
-                    <state>58</state>
+                    <state>61</state>
                 </option>
                 <option>
                     <name>OGCMSISPackSelectDevice</name>
@@ -2548,6 +2550,7 @@
                 <option>
                     <name>CCIncludePath2</name>
                     <state>$PROJ_DIR$/..</state>
+                    <state>$PROJ_DIR$/../../src</state>
                     <state>$PROJ_DIR$/../../../../../devices/MIMXRT595S/drivers</state>
                     <state>$PROJ_DIR$/../../../../../devices/MIMXRT595S</state>
                     <state>$PROJ_DIR$/../../../../../devices/MIMXRT595S/utilities/str</state>
@@ -2581,7 +2584,7 @@
                 </option>
                 <option>
                     <name>CCOptLevelSlave</name>
-                    <state>1</state>
+                    <state>3</state>
                 </option>
                 <option>
                     <name>CCPosIndRopi</name>
@@ -3431,7 +3434,7 @@
                 <option>
                     <name>GFPUCoreSlave2</name>
                     <version>33</version>
-                    <state>58</state>
+                    <state>61</state>
                 </option>
                 <option>
                     <name>OGCMSISPackSelectDevice</name>
@@ -3585,7 +3588,7 @@
                 <option>
                     <name>CCAllowList</name>
                     <version>1</version>
-                    <state>00100000</state>
+                    <state>11111110</state>
                 </option>
                 <option>
                     <name>CCDebugInfo</name>
@@ -3646,6 +3649,7 @@
                 <option>
                     <name>CCIncludePath2</name>
                     <state>$PROJ_DIR$/..</state>
+                    <state>$PROJ_DIR$/../../src</state>
                     <state>$PROJ_DIR$/../../../../../devices/MIMXRT595S/drivers</state>
                     <state>$PROJ_DIR$/../../../../../devices/MIMXRT595S</state>
                     <state>$PROJ_DIR$/../../../../../devices/MIMXRT595S/utilities/str</state>
@@ -3679,7 +3683,7 @@
                 </option>
                 <option>
                     <name>CCOptLevelSlave</name>
-                    <state>1</state>
+                    <state>3</state>
                 </option>
                 <option>
                     <name>CCPosIndRopi</name>
@@ -4411,6 +4415,9 @@
         <file>
             <name>$PROJ_DIR$\..\pin_mux.h</name>
         </file>
+        <file>
+            <name>$PROJ_DIR$\..\port_mixspi_info.h</name>
+        </file>
     </group>
     <group>
         <name>CMSIS</name>
@@ -4574,7 +4581,43 @@
     <group>
         <name>source</name>
         <file>
+            <name>$PROJ_DIR$\..\..\src\bl_flexspi.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\src\bl_flexspi.h</name>
+        </file>
+        <file>
             <name>$PROJ_DIR$\..\main.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\src\snand.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\src\snand.h</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\src\snand_adapter.h</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\src\snand_config.h</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\src\snand_define.h</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\src\snand_flash.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\src\snand_flash.h</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\src\snand_flexspi_nand_ops.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\src\snand_memory.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\src\snand_memory.h</name>
         </file>
     </group>
     <group>
