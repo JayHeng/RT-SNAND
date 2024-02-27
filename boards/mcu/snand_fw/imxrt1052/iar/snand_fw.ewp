@@ -6716,6 +6716,12 @@
             <name>$PROJ_DIR$\..\..\..\..\..\devices\MIMXRT1052\drivers\fsl_common_arm.h</name>
         </file>
         <file>
+            <name>$PROJ_DIR$\..\..\..\..\..\devices\MIMXRT1052\drivers\fsl_flexspi.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\..\..\..\devices\MIMXRT1052\drivers\fsl_flexspi.h</name>
+        </file>
+        <file>
             <name>$PROJ_DIR$\..\..\..\..\..\devices\MIMXRT1052\drivers\fsl_gpio.c</name>
         </file>
         <file>
@@ -6735,9 +6741,15 @@
         <name>source</name>
         <file>
             <name>$PROJ_DIR$\..\..\src\bl_flexspi.c</name>
+            <excluded>
+                <configuration>debug</configuration>
+            </excluded>
         </file>
         <file>
             <name>$PROJ_DIR$\..\..\src\bl_flexspi.h</name>
+            <excluded>
+                <configuration>debug</configuration>
+            </excluded>
         </file>
         <file>
             <name>$PROJ_DIR$\..\main.c</name>

@@ -9,8 +9,8 @@
 #define _SNAND_FLASH_H_
 
 #include "snand.h"
-#include "bl_flexspi.h"
 #include "fsl_common.h"
+#include "fsl_flexspi.h"
 
 /*******************************************************************************
  * Definitions
@@ -53,11 +53,11 @@ enum _serial_nand_status
 /*
  *  NAND Command index used for customized LUT entries.
  */
-#define NAND_CMD_INDEX_READCHACHE      CMD_INDEX_READ
-#define NAND_CMD_INDEX_READSTATUS      CMD_INDEX_READSTATUS
-#define NAND_CMD_INDEX_WRITEENABLE     CMD_INDEX_WRITEENABLE
+#define NAND_CMD_INDEX_READCHACHE      0
+#define NAND_CMD_INDEX_READSTATUS      1
+#define NAND_CMD_INDEX_WRITEENABLE     2
 #define NAND_CMD_INDEX_ERASEBLOCK      3
-#define NAND_CMD_INDEX_PROGRAMLOAD     CMD_INDEX_WRITE
+#define NAND_CMD_INDEX_PROGRAMLOAD     4
 #define NAND_CMD_INDEX_READPAGE        5
 #define NAND_CMD_INDEX_READECCSTAT     6
 #define NAND_CMD_INDEX_PROGRAMEXECUTE  7
@@ -70,25 +70,25 @@ enum _serial_nand_status
  *      The will take effect if the lut sequences are not customized.
  */
 /* LUT sequence index for READ cache sequence  */
-#define NAND_CMD_LUT_SEQ_IDX_READCACHE       CMD_LUT_SEQ_IDX_READ //!< 0
+#define NAND_CMD_LUT_SEQ_IDX_READCACHE       0
 /* LUT sequence index for Read Status sequence */
-#define NAND_CMD_LUT_SEQ_IDX_READSTATUS      CMD_LUT_SEQ_IDX_READSTATUS //!< 1
+#define NAND_CMD_LUT_SEQ_IDX_READSTATUS      1
 /* LUT sequence index for write enable sequence */
-#define NAND_CMD_LUT_SEQ_IDX_WRITEENABLE     CMD_LUT_SEQ_IDX_WRITEENABLE //!< 3
+#define NAND_CMD_LUT_SEQ_IDX_WRITEENABLE     3
 /* LUT sequence index for Read cache for odd blocks */
-#define NAND_CMD_LUT_SEQ_IDX_READCACHE_ODD   4 //!< 4
+#define NAND_CMD_LUT_SEQ_IDX_READCACHE_ODD   4
 /* LUT sequence index for erase block */
-#define NAND_CMD_LUT_SEQ_IDX_ERASEBLOCK      5 //!< 5
+#define NAND_CMD_LUT_SEQ_IDX_ERASEBLOCK      5
 /* LUT sequence index for program load */
-#define NAND_CMD_LUT_SEQ_IDX_PROGRAMLOAD     CMD_LUT_SEQ_IDX_WRITE //!< 9
+#define NAND_CMD_LUT_SEQ_IDX_PROGRAMLOAD     9
 /* LUT sequence index for program load for odd blocks */
-#define NAND_CMD_LUT_SEQ_IDX_PROGRAMLOAD_ODD 10 //!< 10
+#define NAND_CMD_LUT_SEQ_IDX_PROGRAMLOAD_ODD 10
 /**/
-#define NAND_CMD_LUT_SEQ_IDX_READPAGE        11 //!< 11
+#define NAND_CMD_LUT_SEQ_IDX_READPAGE        11
 /* LUT sequence index for read ecc status  */
-#define NAND_CMD_LUT_SEQ_IDX_READECCSTAT     13 //!< 13
+#define NAND_CMD_LUT_SEQ_IDX_READECCSTAT     13
 /* LUT sequence index for program execute */
-#define NAND_CMD_LUT_SEQ_IDX_PROGRAMEXECUTE  14 //!< 14
+#define NAND_CMD_LUT_SEQ_IDX_PROGRAMEXECUTE  14
 
 //!@brief Serial NAND Command Definitions
 enum
