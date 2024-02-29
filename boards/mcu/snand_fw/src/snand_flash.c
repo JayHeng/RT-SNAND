@@ -121,17 +121,6 @@ status_t flexspi_set_failsafe_setting(flexspi_mem_config_t *config)
         {
             break;
         }
-// This is an example that shows how to override the default pad setting in ROM, for now, the pad setting in ROM is
-// idential to below values
-// So, below codes are not required.
-#if 0
-        // See IOMUXC pad setting definitions for more details.
-        config->controllerMiscOption |= (1<<kFlexSpiMiscOffset_PadSettingOverrideEnable);
-        config->dqsPadSettingOverride = 0x130f1;
-        config->sclkPadSettingOverride = 0x10f1;
-        config->csPadSettingOverride = 0x10f1;
-        config->dataPadSettingOverride = 0x10f1;
-#endif
         if (config->readSampleClkSrc == kFlexSPIReadSampleClk_ExternalInputFromDqsPad)
         {
             if (config->controllerMiscOption & (1 << kFlexSpiMiscOffset_DdrModeEnable))
@@ -193,8 +182,6 @@ status_t flexspi_nand_get_default_cfg_blk(flexspi_nand_config_t *config)
 
     memset(memCfg, 0, sizeof(flexspi_mem_config_t));
 
-    memCfg->tag = FLEXSPI_CFG_BLK_TAG;
-    memCfg->version = FLEXSPI_CFG_BLK_VERSION;
     memCfg->deviceType = kFlexSpiDeviceType_SerialNAND;
 
     // Get safe frequency for Serial NAND.

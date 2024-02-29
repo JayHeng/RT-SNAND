@@ -574,8 +574,6 @@ status_t flexspi_nand_get_config(FLEXSPI_Type *base, flexspi_nand_config_t *conf
 
         memset(config, 0, sizeof(flexspi_nand_config_t));
 
-        config->memConfig.tag = FLEXSPI_CFG_BLK_TAG;
-        config->memConfig.version = FLEXSPI_CFG_BLK_VERSION;
         config->memConfig.deviceType = kFlexSpiDeviceType_SerialNAND;
         config->memConfig.csHoldTime = 3;
         config->memConfig.csSetupTime = 3;

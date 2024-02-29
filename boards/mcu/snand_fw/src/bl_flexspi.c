@@ -772,11 +772,6 @@ status_t flexspi_init(FLEXSPI_Type *base, flexspi_mem_config_t *config)
         bool need_safe_freq = (config->deviceModeCfgEnable || config->configCmdEnable) &&
                               ((config->controllerMiscOption & (1 << kFlexSpiMiscOffset_SafeConfigFreqEnable)));
 
-        if (config->tag != FLEXSPI_CFG_BLK_TAG)
-        {
-            break;
-        }
-
         /*
          *  !!! Important !!!
          *  The module clock must be disabled during clock switch in order to avoid glitch

@@ -162,13 +162,11 @@ typedef struct
 //!@brief FlexSPI Memory Configuration Block
 typedef struct _FlexSPIConfig
 {
-    uint32_t tag;               //!< [0x000-0x003] Tag, fixed value 0x42464346UL
-    uint32_t version;           //!< [0x004-0x007] Version,[31:24] -'V', [23:16] - Major, [15:8] - Minor, [7:0] - bugfix
-    uint32_t reserved0;         //!< [0x008-0x00b] Reserved for future use
     uint8_t readSampleClkSrc;   //!< [0x00c-0x00c] Read Sample Clock Source, valid value: 0/1/3
     uint8_t csHoldTime;         //!< [0x00d-0x00d] CS hold time, default value: 3
     uint8_t csSetupTime;        //!< [0x00e-0x00e] CS setup time, default value: 3
     uint8_t columnAddressWidth; //!< [0x00f-0x00f] Column Address with, for HyperBus protocol, it is fixed to 3, For
+
     //! Serial NAND, need to refer to datasheet
     uint8_t deviceModeCfgEnable; //!< [0x010-0x010] Device Mode Configure enable flag, 1 - Enable, 0 - Disable
     uint8_t deviceModeType; //!< [0x011-0x011] Specify the configuration command type:Quad Enable, DPI/QPI/OPI switch,
@@ -185,6 +183,7 @@ typedef struct _FlexSPIConfig
     uint32_t reserved1;   //!< [0x02c-0x02f] Reserved for future use
     uint32_t configCmdArgs[3];     //!< [0x030-0x03b] Arguments/Parameters for device Configuration commands
     uint32_t reserved2;            //!< [0x03c-0x03f] Reserved for future use
+
     uint32_t controllerMiscOption; //!< [0x040-0x043] Controller Misc Options, see Misc feature bit definitions for more
     //! details
     uint8_t deviceType;    //!< [0x044-0x044] Device Type:  See Flash Type Definition for more details
@@ -198,10 +197,6 @@ typedef struct _FlexSPIConfig
     uint32_t sflashA2Size;               //!< [0x054-0x057] Size of Flash connected to A2
     uint32_t sflashB1Size;               //!< [0x058-0x05b] Size of Flash connected to B1
     uint32_t sflashB2Size;               //!< [0x05c-0x05f] Size of Flash connected to B2
-    uint32_t csPadSettingOverride;       //!< [0x060-0x063] CS pad setting override value
-    uint32_t sclkPadSettingOverride;     //!< [0x064-0x067] SCK pad setting override value
-    uint32_t dataPadSettingOverride;     //!< [0x068-0x06b] data pad setting override value
-    uint32_t dqsPadSettingOverride;      //!< [0x06c-0x06f] DQS pad setting override value
     uint32_t timeoutInMs;                //!< [0x070-0x073] Timeout threshold for read status command
     uint32_t commandInterval;            //!< [0x074-0x077] CS deselect interval between two commands
     flexspi_dll_time_t dataValidTime[2]; //!< [0x078-0x07b] CLK edge to data valid time for PORT A and PORT B
