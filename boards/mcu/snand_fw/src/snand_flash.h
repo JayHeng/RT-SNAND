@@ -10,6 +10,7 @@
 
 #include "snand.h"
 #include "fsl_common.h"
+#include "bl_flexspi.h"
 #include "fsl_flexspi.h"
 
 /*******************************************************************************

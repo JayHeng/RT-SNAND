@@ -6741,15 +6741,9 @@
         <name>source</name>
         <file>
             <name>$PROJ_DIR$\..\..\src\bl_flexspi.c</name>
-            <excluded>
-                <configuration>debug</configuration>
-            </excluded>
         </file>
         <file>
             <name>$PROJ_DIR$\..\..\src\bl_flexspi.h</name>
-            <excluded>
-                <configuration>debug</configuration>
-            </excluded>
         </file>
         <file>
             <name>$PROJ_DIR$\..\main.c</name>
