@@ -578,8 +578,8 @@ status_t flexspi_nand_get_config(FLEXSPI_Type *base, flexspi_nand_config_t *conf
         config->memConfig.csHoldTime = 3;
         config->memConfig.csSetupTime = 3;
         config->memConfig.commandInterval = 50;
-        config->memConfig.sflashPadType = kSerialFlash_4Pads;
-        config->memConfig.readSampleClkSrc = kFlexSPIReadSampleClk_LoopbackInternally;
+        config->memConfig.sflashPadType = kFLEXSPI_4PAD;
+        config->memConfig.readSampleClkSrc = kFLEXSPI_ReadSampleClkLoopbackInternally;
         config->memConfig.serialClkFreq = kFlexSpiSerialClk_SafeFreq;
         config->memConfig.sflashA1Size = 128U * 1024 * 1024 * 2; // Default size: 1Gbit
 
@@ -635,7 +635,7 @@ status_t flexspi_nand_get_config(FLEXSPI_Type *base, flexspi_nand_config_t *conf
             break;
         }
 
-        config->memConfig.readSampleClkSrc = kFlexSPIReadSampleClk_LoopbackFromDqsPad;
+        config->memConfig.readSampleClkSrc = kFLEXSPI_ReadSampleClkLoopbackFromDqsPad;
         config->memConfig.serialClkFreq = option->option0.B.max_freq;
 
         uint32_t page_size_in_kb = option->option0.B.page_size_in_kb;
@@ -725,8 +725,8 @@ status_t flexspi_nand_get_config(FLEXSPI_Type *base, flexspi_nand_config_t *conf
 
         if (option->option0.B.device_type == kSerialNandCfgOption_DeviceType_Octal)
         {
-            config->memConfig.sflashPadType = kSerialFlash_8Pads;
-            config->memConfig.readSampleClkSrc = kFlexSPIReadSampleClk_ExternalInputFromDqsPad;
+            config->memConfig.sflashPadType = kFLEXSPI_8PAD;
+            config->memConfig.readSampleClkSrc = kFLEXSPI_ReadSampleClkExternalInputFromDqsPad;
 
             // Write Enable
             config->memConfig.lookupTable[4 * NAND_CMD_LUT_SEQ_IDX_WRITEENABLE] =

@@ -178,19 +178,19 @@ status_t flexspi_configure_dll(FLEXSPI_Type *base, flexspi_mem_config_t *config)
         uint32_t temp;
 
         if ((base == NULL) || (config == NULL) ||
-            (config->readSampleClkSrc > kFlexSPIReadSampleClk_ExternalInputFromDqsPad))
+            (config->readSampleClkSrc > kFLEXSPI_ReadSampleClkExternalInputFromDqsPad))
         {
             break;
         }
 
         switch (config->readSampleClkSrc)
         {
-            case kFlexSPIReadSampleClk_LoopbackInternally:
-            case kFlexSPIReadSampleClk_LoopbackFromDqsPad:
-            case kFlexSPIReadSampleClk_LoopbackFromSckPad:
+            case kFLEXSPI_ReadSampleClkLoopbackInternally:
+            case kFLEXSPI_ReadSampleClkLoopbackFromDqsPad:
+            case kFLEXSPI_ReadSampleClkLoopbackFromSckPad:
                 isUnifiedConfig = true;
                 break;
-            case kFlexSPIReadSampleClk_ExternalInputFromDqsPad:
+            case kFLEXSPI_ReadSampleClkExternalInputFromDqsPad:
                 if (flexspi_is_ck2_enabled(config))
                 {
                     isUnifiedConfig = true;
@@ -578,7 +578,7 @@ status_t flexspi_device_workmode_config(FLEXSPI_Type *base, flexspi_mem_config_t
 
         // If device is working under DPI/QPI/OPI mode, ignore SPI2XPI command
         uint32_t read_cmd_pads = (base->LUT[0] >> 8) & 0x03;
-        if ((read_cmd_pads > FLEXSPI_1PAD) && (config->deviceModeType == kDeviceConfigCmdType_Spi2Xpi))
+        if ((read_cmd_pads > kFLEXSPI_1PAD) && (config->deviceModeType == kDeviceConfigCmdType_Spi2Xpi))
         {
             status = kStatus_Success;
             break;
@@ -673,7 +673,7 @@ status_t flexspi_device_cmd_config(FLEXSPI_Type *base, flexspi_mem_config_t *con
             {
                 // If device is working under DPI/QPI/OPI mode, ignore SPI2XPI command
                 uint32_t read_cmd_pads = (base->LUT[0] >> 8) & 0x03;
-                if ((read_cmd_pads > FLEXSPI_1PAD) && (config->configModeType[index] == kDeviceConfigCmdType_Spi2Xpi))
+                if ((read_cmd_pads > kFLEXSPI_1PAD) && (config->configModeType[index] == kDeviceConfigCmdType_Spi2Xpi))
                 {
                     continue;
                 }
@@ -824,7 +824,7 @@ status_t flexspi_init(FLEXSPI_Type *base, flexspi_mem_config_t *config)
         if ((sizeof(base->FLSHCR1) / sizeof(base->FLSHCR1[0])) > 2)
         {
             // Enable Combined mode if Serial FLASH works using Octal pad instructions.
-            if (config->sflashPadType == kSerialFlash_8Pads)
+            if (config->sflashPadType == kFLEXSPI_8PAD)
             {
 #if !defined(FSL_FEATURE_FLEXSPI_HAS_NO_MCR0_COMBINATIONEN) || (FSL_FEATURE_FLEXSPI_HAS_NO_MCR0_COMBINATIONEN == 0)
                 mcr0 |= FLEXSPI_MCR0_COMBINATIONEN_MASK;

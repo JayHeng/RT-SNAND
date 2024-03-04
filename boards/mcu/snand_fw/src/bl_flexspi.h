@@ -7,8 +7,8 @@
  *
  */
 
-#ifndef __FSL_FLEXSPI_H__
-#define __FSL_FLEXSPI_H__
+#ifndef __BL_FLEXSPI_H__
+#define __BL_FLEXSPI_H__
 
 #include "fsl_common.h"
 #include "port_mixspi_info.h"
@@ -29,11 +29,6 @@
 /* IP TX BUF depth, in longwords */
 #define FlexSPI_IP_TX_BUF_DEPTH (256U)
 
-/* FLEXSPI memory config block related defintions */
-#define FLEXSPI_CFG_BLK_TAG (0x42464346UL)     // ascii "FCFB" Big Endian
-#define FLEXSPI_CFG_BLK_VERSION (0x56010400UL) // V1.4.0
-#define FLEXSPI_CFG_BLK_SIZE (512)
-
 /* FLEXSPI Feature related definitions */
 #define FLEXSPI_FEATURE_HAS_PARALLEL_MODE 1
 
@@ -48,15 +43,6 @@
 #define CMD_LUT_SEQ_IDX_WRITEENABLE 3
 #define CMD_LUT_SEQ_IDX_WRITE 9
 
-#define FLEXSPI_1PAD 0
-#define FLEXSPI_2PAD 1
-#define FLEXSPI_4PAD 2
-#define FLEXSPI_8PAD 3
-
-#define FLEXSPI_LUT_SEQ(cmd0, pad0, op0, cmd1, pad1, op1)                                                              \
-    (FLEXSPI_LUT_OPERAND0(op0) | FLEXSPI_LUT_NUM_PADS0(pad0) | FLEXSPI_LUT_OPCODE0(cmd0) | FLEXSPI_LUT_OPERAND1(op1) | \
-     FLEXSPI_LUT_NUM_PADS1(pad1) | FLEXSPI_LUT_OPCODE1(cmd1))
-
 //!@brief Defintions for FlexSPI Serial Clock Frequency
 typedef enum _FlexSpiSerialClockFreq
 {
@@ -69,15 +55,6 @@ enum
     kFlexSpiClk_SDR, //!< Clock configure for SDR mode
     kFlexSpiClk_DDR, //!< Clock configurat for DDR mode
 };
-
-//!@brief FlexSPI Read Sample Clock Source definition
-typedef enum _FlashReadSampleClkSource
-{
-    kFlexSPIReadSampleClk_LoopbackInternally = 0,
-    kFlexSPIReadSampleClk_LoopbackFromDqsPad = 1,
-    kFlexSPIReadSampleClk_LoopbackFromSckPad = 2,
-    kFlexSPIReadSampleClk_ExternalInputFromDqsPad = 3,
-} flexspi_read_sample_clk_t;
 
 //!@brief FlexSPI IP Error codes
 typedef enum _FlexSpiIpCmdError
@@ -125,15 +102,6 @@ enum
     kFlexSpiDeviceType_MCP_NOR_RAM = 0x13,  //!< Flash deivce is MCP device, A1 is Serial NOR, A2 is Serial RAMs
 };
 
-//!@brief Flash Pad Definitions
-enum
-{
-    kSerialFlash_1Pad = 1,
-    kSerialFlash_2Pads = 2,
-    kSerialFlash_4Pads = 4,
-    kSerialFlash_8Pads = 8,
-};
-
 //!@brief FlexSPI LUT Sequence structure
 typedef struct _lut_sequence
 {
@@ -162,11 +130,12 @@ typedef struct
 //!@brief FlexSPI Memory Configuration Block
 typedef struct _FlexSPIConfig
 {
+    uint32_t reservedX0[3];
+    /////////////////////////////
     uint8_t readSampleClkSrc;   //!< [0x00c-0x00c] Read Sample Clock Source, valid value: 0/1/3
     uint8_t csHoldTime;         //!< [0x00d-0x00d] CS hold time, default value: 3
     uint8_t csSetupTime;        //!< [0x00e-0x00e] CS setup time, default value: 3
     uint8_t columnAddressWidth; //!< [0x00f-0x00f] Column Address with, for HyperBus protocol, it is fixed to 3, For
-
     //! Serial NAND, need to refer to datasheet
     uint8_t deviceModeCfgEnable; //!< [0x010-0x010] Device Mode Configure enable flag, 1 - Enable, 0 - Disable
     uint8_t deviceModeType; //!< [0x011-0x011] Specify the configuration command type:Quad Enable, DPI/QPI/OPI switch,
@@ -183,7 +152,6 @@ typedef struct _FlexSPIConfig
     uint32_t reserved1;   //!< [0x02c-0x02f] Reserved for future use
     uint32_t configCmdArgs[3];     //!< [0x030-0x03b] Arguments/Parameters for device Configuration commands
     uint32_t reserved2;            //!< [0x03c-0x03f] Reserved for future use
-
     uint32_t controllerMiscOption; //!< [0x040-0x043] Controller Misc Options, see Misc feature bit definitions for more
     //! details
     uint8_t deviceType;    //!< [0x044-0x044] Device Type:  See Flash Type Definition for more details
@@ -197,6 +165,8 @@ typedef struct _FlexSPIConfig
     uint32_t sflashA2Size;               //!< [0x054-0x057] Size of Flash connected to A2
     uint32_t sflashB1Size;               //!< [0x058-0x05b] Size of Flash connected to B1
     uint32_t sflashB2Size;               //!< [0x05c-0x05f] Size of Flash connected to B2
+    uint32_t reservedX2[4];
+    /////////////////////////////
     uint32_t timeoutInMs;                //!< [0x070-0x073] Timeout threshold for read status command
     uint32_t commandInterval;            //!< [0x074-0x077] CS deselect interval between two commands
     flexspi_dll_time_t dataValidTime[2]; //!< [0x078-0x07b] CLK edge to data valid time for PORT A and PORT B

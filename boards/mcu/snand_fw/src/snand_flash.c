@@ -72,14 +72,14 @@ enum
 ////////////////////////////////////////////////////////////////////////////////
 // Default Read Status command(Get Feature)
 static const uint32_t s_read_status_lut[4] = {
-    FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, FLEXSPI_1PAD, 0x0F, kFLEXSPI_Command_SDR, FLEXSPI_1PAD, 0xC0),
-    FLEXSPI_LUT_SEQ(kFLEXSPI_Command_READ_SDR, FLEXSPI_1PAD, 0x01, kFLEXSPI_Command_STOP, FLEXSPI_1PAD, 0), 0, 0
+    FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x0F, kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0xC0),
+    FLEXSPI_LUT_SEQ(kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x01, kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0), 0, 0
 };
 
 // Default Read ECC Status
 static const uint32_t s_read_ecc_status_lut[4] = {
-    FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, FLEXSPI_1PAD, 0x0F, kFLEXSPI_Command_SDR, FLEXSPI_1PAD, 0xC0),
-    FLEXSPI_LUT_SEQ(kFLEXSPI_Command_READ_SDR, FLEXSPI_1PAD, 0x01, kFLEXSPI_Command_STOP, FLEXSPI_1PAD, 0), 0, 0
+    FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x0F, kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0xC0),
+    FLEXSPI_LUT_SEQ(kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x01, kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0), 0, 0
 };
 ////////////////////////////////////////////////////////////////////////////////
 // Code
@@ -121,7 +121,7 @@ status_t flexspi_set_failsafe_setting(flexspi_mem_config_t *config)
         {
             break;
         }
-        if (config->readSampleClkSrc == kFlexSPIReadSampleClk_ExternalInputFromDqsPad)
+        if (config->readSampleClkSrc == kFLEXSPI_ReadSampleClkExternalInputFromDqsPad)
         {
             if (config->controllerMiscOption & (1 << kFlexSpiMiscOffset_DdrModeEnable))
             {
@@ -193,15 +193,15 @@ status_t flexspi_nand_get_default_cfg_blk(flexspi_nand_config_t *config)
 
     memCfg->csHoldTime = 3;
     memCfg->csSetupTime = 3;
-    memCfg->sflashPadType = kSerialFlash_1Pad;
+    memCfg->sflashPadType = kFLEXSPI_1PAD;
     memCfg->timeoutInMs = 100;
 
     // Get LUT for Cache read
-    s_read_from_cache_lut[0] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, FLEXSPI_1PAD, readCacheCommand, kFLEXSPI_Command_CADDR_SDR, FLEXSPI_1PAD, 0x10);
-    s_read_from_cache_lut[1] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DUMMY_SDR, FLEXSPI_1PAD, 0x08, kFLEXSPI_Command_READ_SDR, FLEXSPI_1PAD, 0x04);
+    s_read_from_cache_lut[0] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, readCacheCommand, kFLEXSPI_Command_CADDR_SDR, kFLEXSPI_1PAD, 0x10);
+    s_read_from_cache_lut[1] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DUMMY_SDR, kFLEXSPI_1PAD, 0x08, kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x04);
 
     // Get LUT for Page Read
-    s_page_read_lut[0] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, FLEXSPI_1PAD, readPageCommand, kFLEXSPI_Command_RADDR_SDR, FLEXSPI_1PAD, 0x18);
+    s_page_read_lut[0] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, readPageCommand, kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, 0x18);
 
     // Get Column Address Width
     uint8_t tempOpt = kFlexSpi_Nand_Cs_Column_Addr_Width_12Bit;
