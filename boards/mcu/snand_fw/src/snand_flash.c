@@ -67,6 +67,13 @@ enum
     kSerialNAND_Command_ReadStatus = 0x0F,
 };
 
+//!@brief FlexSPI clock configuration type
+enum
+{
+    kFlexSpiClk_SDR, //!< Clock configure for SDR mode
+    kFlexSpiClk_DDR, //!< Clock configurat for DDR mode
+};
+
 ////////////////////////////////////////////////////////////////////////////////
 // Variables
 ////////////////////////////////////////////////////////////////////////////////

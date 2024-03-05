@@ -365,13 +365,17 @@ static void mixspi_clock_gate_enable(FLEXSPI_Type *base)
 {
     if (base == FLEXSPI0)
     {
-        RESET_PeripheralReset(kFLEXSPI0_RST_SHIFT_RSTn);
         CLOCK_EnableClock(kCLOCK_Flexspi0);
+#if defined(FSL_FEATURE_FLEXSPI_HAS_RESET) && FSL_FEATURE_FLEXSPI_HAS_RESET
+        RESET_PeripheralReset(kFLEXSPI0_RST_SHIFT_RSTn);
+#endif
     }
     else if (base == FLEXSPI1)
     {
-        RESET_PeripheralReset(kFLEXSPI1_RST_SHIFT_RSTn);
         CLOCK_EnableClock(kCLOCK_Flexspi1);
+#if defined(FSL_FEATURE_FLEXSPI_HAS_RESET) && FSL_FEATURE_FLEXSPI_HAS_RESET
+        RESET_PeripheralReset(kFLEXSPI1_RST_SHIFT_RSTn);
+#endif
     }
 }
 
@@ -386,6 +390,35 @@ static void mixspi_clock_gate_disable(FLEXSPI_Type *base)
     {
         CLOCK_DisableClock(kCLOCK_Flexspi1);
     }
+}
+
+static bool is_mixspi_clock_enabled(FLEXSPI_Type *base)
+{
+    if (base == FLEXSPI0)
+    {
+        if (CLKCTL0->PSCCTL0 & CLKCTL0_PSCCTL0_FLEXSPI0_OTFAD_CLK_MASK)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    if (base == FLEXSPI1)
+    {
+        if (CLKCTL0->PSCCTL0 & CLKCTL0_PSCCTL0_FLEXSPI1_CLK_MASK)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    return false;
 }
 
 static void mixspi_clock_init(FLEXSPI_Type *base, mixspi_root_clk_freq_t clkFreq)

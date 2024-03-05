@@ -40,8 +40,6 @@ enum
 /*******************************************************************************
  * Prototypes
  ******************************************************************************/
-//!@brief Reset internal logical of FlexSPI
-static void flexspi_swreset(FLEXSPI_Type *base);
 //!@brief Unlock LUT
 static void flexspi_unlock_lut(FLEXSPI_Type *base);
 //!@brief Lock LUT
@@ -71,13 +69,6 @@ static status_t flexspi_device_cmd_config_all_chips(FLEXSPI_Type *base, flexspi_
 /*******************************************************************************
  * Codes
  ******************************************************************************/
-static void flexspi_swreset(FLEXSPI_Type *base)
-{
-    base->MCR0 |= FLEXSPI_MCR0_SWRESET_MASK;
-    while (base->MCR0 & FLEXSPI_MCR0_SWRESET_MASK)
-    {
-    }
-}
 
 static void flexspi_unlock_lut(FLEXSPI_Type *base)
 {
@@ -172,10 +163,7 @@ status_t flexspi_configure_dll(FLEXSPI_Type *base, flexspi_mem_config_t *config)
     do
     {
         bool isUnifiedConfig = true;
-        uint32_t flexspiRootClk;
         uint32_t flexspiDll[2] = { FLEXSPI_DLLCR_DEFAULT, FLEXSPI_DLLCR_DEFAULT };
-        uint32_t dllValue;
-        uint32_t temp;
 
         if ((base == NULL) || (config == NULL) ||
             (config->readSampleClkSrc > kFLEXSPI_ReadSampleClkExternalInputFromDqsPad))
@@ -212,7 +200,9 @@ status_t flexspi_configure_dll(FLEXSPI_Type *base, flexspi_mem_config_t *config)
 #if FLEXSPI_ENABLE_OCTAL_FLASH_SUPPORT
         else
         {
-            flexspiRootClk = mixspi_get_clock(base);
+            uint32_t flexspiRootClk = mixspi_get_clock(base);
+            uint32_t dllValue;
+            uint32_t temp;
             bool useDLL = false;
 
             // See FlexSPI Chapter for more details
@@ -313,6 +303,17 @@ status_t flexspi_configure_dll(FLEXSPI_Type *base, flexspi_mem_config_t *config)
             base->DLLCR[1] = flexspiDll[1];
         }
 
+        // Override the DLLCR setting by Customizable value   
+        if (config->dll0CrVal)
+        {
+            base->DLLCR[0] =  config->dll0CrVal;
+        }
+
+        if (config->dll1CrVal)
+        {
+            base->DLLCR[1] =  config->dll1CrVal;
+        }
+        
         if (mdisConfigRequired)
         {
             base->MCR0 &= (uint32_t)~FLEXSPI_MCR0_MDIS_MASK;
@@ -776,6 +777,11 @@ status_t flexspi_init(FLEXSPI_Type *base, flexspi_mem_config_t *config)
          *  !!! Important !!!
          *  The module clock must be disabled during clock switch in order to avoid glitch
          */
+        // Do not re-configure FLEXSPI IP when it is busy
+        if (is_mixspi_clock_enabled(base))
+        {
+            flexspi_wait_idle(base);
+        }
         mixspi_clock_gate_disable(base);
         //flexspi_iomux_config(base, config);
         if (need_safe_freq)
@@ -799,7 +805,7 @@ status_t flexspi_init(FLEXSPI_Type *base, flexspi_mem_config_t *config)
         mixspi_clock_gate_enable(base);
 
         base->MCR0 &= ~FLEXSPI_MCR0_MDIS_MASK;
-        flexspi_swreset(base);
+        FLEXSPI_SoftwareReset(base);
 
         // Disable FlexSPI module during configuring control registers.
         base->MCR0 |= FLEXSPI_MCR0_MDIS_MASK;
@@ -873,7 +879,7 @@ status_t flexspi_init(FLEXSPI_Type *base, flexspi_mem_config_t *config)
         base->MCR0 &= ~FLEXSPI_MCR0_MDIS_MASK;
 
         // Reset all registers except control registers
-        flexspi_swreset(base);
+        FLEXSPI_SoftwareReset(base);
 
         if (config->deviceModeCfgEnable)
         {
@@ -910,9 +916,10 @@ status_t flexspi_init(FLEXSPI_Type *base, flexspi_mem_config_t *config)
             {
                 mixspi_clock_init(base, (mixspi_root_clk_freq_t)config->serialClkFreq);
             }
-
+#if FLEXSPI_ENABLE_NO_CMD_MODE_SUPPORT
             // Re-Configure MCR1
             flexspi_config_mcr1(base, config);
+#endif
             // Re-configure DLLCR
             flexspi_configure_dll(base, config);
             base->MCR0 &= ~FLEXSPI_MCR0_MDIS_MASK;
@@ -968,14 +975,7 @@ status_t flexspi_command_xfer2(FLEXSPI_Type *base, flexspi_transfer_t *xfer)
 {
     status_t status = FLEXSPI_TransferBlocking(base, xfer);
 
-    /* Do software reset or clear AHB buffer directly. */
-#if defined(FSL_FEATURE_SOC_OTFAD_COUNT) && defined(FLEXSPI_AHBCR_CLRAHBRXBUF_MASK) && \
-    defined(FLEXSPI_AHBCR_CLRAHBTXBUF_MASK)
-    base->AHBCR |= FLEXSPI_AHBCR_CLRAHBRXBUF_MASK | FLEXSPI_AHBCR_CLRAHBTXBUF_MASK;
-    base->AHBCR &= ~(FLEXSPI_AHBCR_CLRAHBRXBUF_MASK | FLEXSPI_AHBCR_CLRAHBTXBUF_MASK);
-#else
-    FLEXSPI_SoftwareReset(base);
-#endif
+    flexspi_clear_cache(base);
 
     return status;
 }
@@ -1215,7 +1215,19 @@ void flexspi_clear_cache(FLEXSPI_Type *base)
             break;
         }
 
-        flexspi_swreset(base);
+        flexspi_wait_idle(base);
+
+        /* Do software reset or clear AHB buffer directly. */
+#if defined(FSL_FEATURE_SOC_OTFAD_COUNT) && defined(FLEXSPI_AHBCR_CLRAHBRXBUF_MASK) && \
+    defined(FLEXSPI_AHBCR_CLRAHBTXBUF_MASK)
+        // Clear AHB buffer
+        base->AHBCR |= (FLEXSPI_AHBCR_CLRAHBRXBUF_MASK | FLEXSPI_AHBCR_CLRAHBTXBUF_MASK);
+        while (base->AHBCR & (FLEXSPI_AHBCR_CLRAHBRXBUF_MASK | FLEXSPI_AHBCR_CLRAHBTXBUF_MASK))
+        {
+        }
+#else
+        FLEXSPI_SoftwareReset(base);
+#endif
 
     } while (0);
 }
@@ -1276,6 +1288,20 @@ status_t flexspi_device_wait_busy(FLEXSPI_Type *base,
         busyMask = 1 << config->busyOffset;
         busyPolarity = config->busyBitPolarity;
 
+        // Always try to find out the base address  for the parameter "baseAddr"
+        uint32_t baseAddrTmp = 0;
+        uint32_t *flashSizeArray = &config->sflashA1Size;
+        for (uint32_t i = 0; i < 4; i++)
+        {
+            uint32_t lastAddr = baseAddrTmp;
+            baseAddrTmp += flashSizeArray[i];
+            if (baseAddr < baseAddrTmp)
+            {
+                baseAddr = lastAddr;
+                break;
+            }
+        }
+        
         flashXfer.baseAddress = baseAddr;
         flashXfer.operation = kFlexSpiOperation_Read;
         flashXfer.seqNum = 1;
@@ -1283,6 +1309,12 @@ status_t flexspi_device_wait_busy(FLEXSPI_Type *base,
         flashXfer.rxBuffer = &statusDataBuffer[0];
 
         flashXfer.rxSize = isParallelMode ? sizeof(statusDataBuffer) : sizeof(statusDataBuffer[0]);
+
+        if (config->busyOffset < 16u)
+        {
+            flashXfer.rxSize = flashXfer.rxSize / 2;
+        }
+
         flashXfer.isParallelModeEnable = isParallelMode;
 
         if (config->lutCustomSeqEnable && config->lutCustomSeq[NAND_CMD_INDEX_READSTATUS].seqNum)
@@ -1326,6 +1358,11 @@ status_t flexspi_device_wait_busy(FLEXSPI_Type *base,
                     // Busy bit is 0 if polarity is 1
                     if (busyPolarity)
                     {
+                        if (config->busyOffset < 16)
+                        {
+                            uint16_t tmp = (uint16_t)statusDataBuffer[0] & 0xffffu;
+                            statusDataBuffer[0] = tmp;
+                        }
                         isBusy = (~statusDataBuffer[0]) & busyMask;
                     }
                     else
