@@ -16,45 +16,15 @@
 /**********************************************************************************************************************
  * Definitions
  *********************************************************************************************************************/
-/* The count of FlexSPI_LUT */
-#define FlexSPI_LUT_COUNT (64)
-/* The count of FlexSPI AHB Buffer */
-#define FlexSPI_AHB_RX_BUF_COUNT (4U)
-/* AHB RX_BUF depth, in longwords */
-#define FlexSPI_AHB_RX_BUF_DEPTH (512U)
-/* AHB TX BUF depth, in longwords */
-#define FlexSPI_AHB_TX_BUF_DEPTH (32U)
-/* IP_RX_BUF depth, in longwords */
-#define FlexSPI_IP_RX_BUF_DEPTH (256U)
-/* IP TX BUF depth, in longwords */
-#define FlexSPI_IP_TX_BUF_DEPTH (256U)
 
 /* FLEXSPI Feature related definitions */
 #define FLEXSPI_FEATURE_HAS_PARALLEL_MODE 1
-
-/* Lookup table related defintions */
-#define CMD_INDEX_READ 0
-#define CMD_INDEX_READSTATUS 1
-#define CMD_INDEX_WRITEENABLE 2
-#define CMD_INDEX_WRITE 4
-
-#define CMD_LUT_SEQ_IDX_READ 0
-#define CMD_LUT_SEQ_IDX_READSTATUS 1
-#define CMD_LUT_SEQ_IDX_WRITEENABLE 3
-#define CMD_LUT_SEQ_IDX_WRITE 9
 
 //!@brief Defintions for FlexSPI Serial Clock Frequency
 typedef enum _FlexSpiSerialClockFreq
 {
     kFlexSpiSerialClk_SafeFreq = 1,
 } flexspi_serial_clk_freq_t;
-
-//!@brief FlexSPI clock configuration type
-enum
-{
-    kFlexSpiClk_SDR, //!< Clock configure for SDR mode
-    kFlexSpiClk_DDR, //!< Clock configurat for DDR mode
-};
 
 //!@brief FlexSPI IP Error codes
 typedef enum _FlexSpiIpCmdError
@@ -205,15 +175,6 @@ typedef struct _FlexSpiXfer
     uint32_t rxSize;               //!< Rx size in bytes
 } flexspi_xfer_t;
 
-//!@brief FlexSPI Clock Type
-typedef enum
-{
-    kFlexSpiClock_CoreClock,       //!< ARM Core Clock
-    kFlexSpiClock_AhbClock,        //!< AHB clock
-    kFlexSpiClock_SerialRootClock, //!< Serial Root Clock
-    kFlexSpiClock_IpgClock,        //!< IPG clock
-} flexspi_clock_type_t;
-
 //!@brief Generate bit mask
 #define FLEXSPI_BITMASK(bit_offset) (1u << (bit_offset))
 
@@ -253,6 +214,7 @@ extern "C"
     status_t flexspi_update_lut(FLEXSPI_Type *base, uint32_t seqIndex, const uint32_t *lutBase, uint32_t numberOfSeq);
 
     //!@brief Perform FlexSPI command
+    status_t flexspi_command_xfer2(FLEXSPI_Type *base, flexspi_transfer_t *xfer);
     status_t flexspi_command_xfer(FLEXSPI_Type *base, flexspi_xfer_t *xfer);
 
     //!@brief Get FlexSPI Clock frequency

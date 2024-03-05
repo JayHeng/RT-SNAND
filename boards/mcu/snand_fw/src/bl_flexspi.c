@@ -9,7 +9,7 @@
 #include <assert.h>
 #include <stdbool.h>
 
-#include "bl_flexspi.h"
+#include "snand_flash.h"
 #include "fsl_device_registers.h"
 
 /*******************************************************************************
@@ -460,16 +460,16 @@ status_t flexspi_config_flash_control_registers(FLEXSPI_Type *base, flexspi_mem_
             base->FLSHCR1[index] = temp;
 
             // Configure FLSHCR2
-            temp = FLEXSPI_FLSHCR2_ARDSEQID(CMD_LUT_SEQ_IDX_READ);
+            temp = FLEXSPI_FLSHCR2_ARDSEQID(NAND_CMD_LUT_SEQ_IDX_READCACHE);
 
-            if (config->lutCustomSeqEnable && FLEXSPI_FLSHCR2_ARDSEQNUM(config->lutCustomSeq[CMD_INDEX_WRITE].seqNum))
+            if (config->lutCustomSeqEnable && FLEXSPI_FLSHCR2_ARDSEQNUM(config->lutCustomSeq[NAND_CMD_INDEX_PROGRAMLOAD].seqNum))
             {
-                temp |= FLEXSPI_FLSHCR2_AWRSEQID(config->lutCustomSeq[CMD_INDEX_WRITE].seqId);
-                temp |= FLEXSPI_FLSHCR2_AWRSEQNUM(config->lutCustomSeq[CMD_INDEX_WRITE].seqNum - 1);
+                temp |= FLEXSPI_FLSHCR2_AWRSEQID(config->lutCustomSeq[NAND_CMD_INDEX_PROGRAMLOAD].seqId);
+                temp |= FLEXSPI_FLSHCR2_AWRSEQNUM(config->lutCustomSeq[NAND_CMD_INDEX_PROGRAMLOAD].seqNum - 1);
             }
             else
             {
-                temp |= FLEXSPI_FLSHCR2_AWRSEQID(CMD_LUT_SEQ_IDX_WRITE);
+                temp |= FLEXSPI_FLSHCR2_AWRSEQID(NAND_CMD_LUT_SEQ_IDX_PROGRAMLOAD);
             }
             base->FLSHCR2[index] = temp;
         }
@@ -543,7 +543,7 @@ status_t flexspi_device_write_enable(FLEXSPI_Type *base,
         flexspi_xfer_t flashXfer;
         flashXfer.operation = kFlexSpiOperation_Command;
         flashXfer.seqNum = 1;
-        flashXfer.seqId = CMD_LUT_SEQ_IDX_WRITEENABLE;
+        flashXfer.seqId = NAND_CMD_LUT_SEQ_IDX_WRITEENABLE;
 #if FLEXSPI_FEATURE_HAS_PARALLEL_MODE
         flashXfer.isParallelModeEnable = isParallelMode;
 #else
@@ -551,10 +551,10 @@ status_t flexspi_device_write_enable(FLEXSPI_Type *base,
 #endif // FLEXSPI_FEATURE_HAS_PARALLEL_MODE
         flashXfer.baseAddress = baseAddr;
 
-        if (config->lutCustomSeqEnable && config->lutCustomSeq[CMD_INDEX_WRITEENABLE].seqNum)
+        if (config->lutCustomSeqEnable && config->lutCustomSeq[NAND_CMD_INDEX_WRITEENABLE].seqNum)
         {
-            flashXfer.seqId = config->lutCustomSeq[CMD_INDEX_WRITEENABLE].seqId;
-            flashXfer.seqNum = config->lutCustomSeq[CMD_INDEX_WRITEENABLE].seqNum;
+            flashXfer.seqId = config->lutCustomSeq[NAND_CMD_INDEX_WRITEENABLE].seqId;
+            flashXfer.seqNum = config->lutCustomSeq[NAND_CMD_INDEX_WRITEENABLE].seqNum;
         }
         flexspi_update_lut(base, CMD_LUT_FOR_IP_CMD, &config->lookupTable[4 * flashXfer.seqId], flashXfer.seqNum);
         flashXfer.seqId = CMD_LUT_FOR_IP_CMD;
@@ -964,6 +964,22 @@ status_t flexspi_update_lut(FLEXSPI_Type *base, uint32_t seqIndex, const uint32_
     return status;
 }
 
+status_t flexspi_command_xfer2(FLEXSPI_Type *base, flexspi_transfer_t *xfer)
+{
+    status_t status = FLEXSPI_TransferBlocking(base, xfer);
+
+    /* Do software reset or clear AHB buffer directly. */
+#if defined(FSL_FEATURE_SOC_OTFAD_COUNT) && defined(FLEXSPI_AHBCR_CLRAHBRXBUF_MASK) && \
+    defined(FLEXSPI_AHBCR_CLRAHBTXBUF_MASK)
+    base->AHBCR |= FLEXSPI_AHBCR_CLRAHBRXBUF_MASK | FLEXSPI_AHBCR_CLRAHBTXBUF_MASK;
+    base->AHBCR &= ~(FLEXSPI_AHBCR_CLRAHBRXBUF_MASK | FLEXSPI_AHBCR_CLRAHBTXBUF_MASK);
+#else
+    FLEXSPI_SoftwareReset(base);
+#endif
+
+    return status;
+}
+
 status_t flexspi_command_xfer(FLEXSPI_Type *base, flexspi_xfer_t *xfer)
 {
     status_t status = kStatus_InvalidArgument;
@@ -1263,16 +1279,16 @@ status_t flexspi_device_wait_busy(FLEXSPI_Type *base,
         flashXfer.baseAddress = baseAddr;
         flashXfer.operation = kFlexSpiOperation_Read;
         flashXfer.seqNum = 1;
-        flashXfer.seqId = CMD_LUT_SEQ_IDX_READSTATUS;
+        flashXfer.seqId = NAND_CMD_LUT_SEQ_IDX_READSTATUS;
         flashXfer.rxBuffer = &statusDataBuffer[0];
 
         flashXfer.rxSize = isParallelMode ? sizeof(statusDataBuffer) : sizeof(statusDataBuffer[0]);
         flashXfer.isParallelModeEnable = isParallelMode;
 
-        if (config->lutCustomSeqEnable && config->lutCustomSeq[CMD_INDEX_READSTATUS].seqNum)
+        if (config->lutCustomSeqEnable && config->lutCustomSeq[NAND_CMD_INDEX_READSTATUS].seqNum)
         {
-            flashXfer.seqId = config->lutCustomSeq[CMD_INDEX_READSTATUS].seqId;
-            flashXfer.seqNum = config->lutCustomSeq[CMD_INDEX_READSTATUS].seqNum;
+            flashXfer.seqId = config->lutCustomSeq[NAND_CMD_INDEX_READSTATUS].seqId;
+            flashXfer.seqNum = config->lutCustomSeq[NAND_CMD_INDEX_READSTATUS].seqNum;
         }
 
         flexspi_update_lut(base, flashXfer.seqId, &config->lookupTable[4 * flashXfer.seqId], flashXfer.seqNum);
