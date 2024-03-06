@@ -11,6 +11,8 @@
 #include "pin_mux.h"
 #include "clock_config.h"
 #include "board.h"
+#include "fsl_power.h"
+#include "fsl_reset.h"
 #include "snand.h"
 
 /*******************************************************************************
@@ -34,6 +36,12 @@ int main(void)
     BOARD_InitPins();
     BOARD_BootClockRUN();
     BOARD_InitDebugConsole();
+
+#if !defined(FSL_SDK_DRIVER_QUICK_ACCESS_ENABLE)
+    POWER_DisablePD(kPDRUNCFG_APD_FLEXSPI0_SRAM);
+    POWER_DisablePD(kPDRUNCFG_PPD_FLEXSPI0_SRAM);
+    POWER_ApplyPD();
+#endif
 
     snand_printf("\r\nSNAND: Target i.MXRT500.\r\n");
     snand_printf("\r\n-------------------------------------\r\n");

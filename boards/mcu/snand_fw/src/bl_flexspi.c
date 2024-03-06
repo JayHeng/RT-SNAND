@@ -872,9 +872,13 @@ status_t flexspi_init(FLEXSPI_Type *base, flexspi_mem_config_t *config)
 #endif
 #if !defined(FSL_FEATURE_FLEXSPI_HAS_NO_MCR0_ATDFEN) || (FSL_FEATURE_FLEXSPI_HAS_NO_MCR0_ATDFEN == 0)
                             | FLEXSPI_MCR0_ATDFEN_MASK
+#else
+                            | (0x80u)
 #endif
 #if !defined(FSL_FEATURE_FLEXSPI_HAS_NO_MCR0_ARDFEN) || (FSL_FEATURE_FLEXSPI_HAS_NO_MCR0_ARDFEN == 0)
                             | FLEXSPI_MCR0_ARDFEN_MASK
+#else
+                            | (0x40u)
 #endif
                );
 
