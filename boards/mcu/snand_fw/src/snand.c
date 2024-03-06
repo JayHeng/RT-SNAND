@@ -48,7 +48,7 @@ void snand_main(void)
     snand_printf("SNAND: Get CPU root clock.\r\n");
     /* Show CPU clock source */
     cpu_show_clock_source();
-
+    mixspi_clock_init(EXAMPLE_MIXSPI, kMixspiRootClkFreq_30MHz);
     /* Configure FlexSPI pinmux */
     mixspi_pin_init(EXAMPLE_MIXSPI, EXAMPLE_MIXSPI_PORT, kFLEXSPI_4PAD);
 
