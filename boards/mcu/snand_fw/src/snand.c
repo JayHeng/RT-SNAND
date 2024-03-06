@@ -11,6 +11,7 @@
  * Definitions
  ******************************************************************************/
 
+#define EXAMPLE_FLASH_PAGE_ADDR 0x20000
 #define EXAMPLE_FLASH_PAGE_SIZE 0x800
 
 /*******************************************************************************
@@ -69,14 +70,14 @@ void snand_main(void)
         g_flashRwBuffer[idx] = 0 + idx * sizeof(uint32_t);
     }
 
-    status = spinand_mem_erase(0x0, 0x800);
+    status = spinand_mem_erase(EXAMPLE_FLASH_PAGE_ADDR, EXAMPLE_FLASH_PAGE_SIZE);
     if (status != kStatus_Success)
     {
         snand_printf("SNAND: Failed to erase Flash.\r\n");
         return;
     }
 
-    status = spinand_mem_write(0x0, 0x800, (const uint8_t *)&g_flashRwBuffer);
+    status = spinand_mem_write(EXAMPLE_FLASH_PAGE_ADDR, EXAMPLE_FLASH_PAGE_SIZE, (const uint8_t *)&g_flashRwBuffer);
     if (status != kStatus_Success)
     {
         snand_printf("SNAND: Failed to write Flash.\r\n");
@@ -89,7 +90,7 @@ void snand_main(void)
         return;
     }
 
-    status = spinand_mem_read(0x0, 0x800, (uint8_t *)&g_flashRwBuffer2);
+    status = spinand_mem_read(EXAMPLE_FLASH_PAGE_ADDR, EXAMPLE_FLASH_PAGE_SIZE, (uint8_t *)&g_flashRwBuffer2);
     if (status != kStatus_Success)
     {
         snand_printf("SNAND: Failed to read Flash.\r\n");

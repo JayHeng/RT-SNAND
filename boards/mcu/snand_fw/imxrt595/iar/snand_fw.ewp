@@ -715,7 +715,7 @@
                 </option>
                 <option>
                     <name>IlinkOutputFile</name>
-                    <state>hello_world.out</state>
+                    <state>snand_fw.out</state>
                 </option>
                 <option>
                     <name>IlinkDebugInfoEnable</name>

@@ -519,7 +519,7 @@ status_t flexspi_nand_verify_id(FLEXSPI_Type *base, serial_nand_config_option_t 
 {
     status_t status = kStatus_InvalidArgument;
     uint32_t id = 0;
-
+/*
     flexspi_xfer_t flashXfer;
     flashXfer.baseAddress = 0;
     flashXfer.isParallelModeEnable = false;
@@ -528,8 +528,8 @@ status_t flexspi_nand_verify_id(FLEXSPI_Type *base, serial_nand_config_option_t 
     flashXfer.rxSize = 2;
     flashXfer.seqId = NAND_CMD_LUT_FOR_IP_CMD;
     flashXfer.seqNum = 1;
+*/
 
-/*
     flexspi_transfer_t flashXfer;
     flashXfer.deviceAddress = 0;
     flashXfer.port          = EXAMPLE_MIXSPI_PORT;
@@ -537,12 +537,12 @@ status_t flexspi_nand_verify_id(FLEXSPI_Type *base, serial_nand_config_option_t 
     flashXfer.SeqNumber     = 1;
     flashXfer.seqIndex      = NAND_CMD_LUT_FOR_IP_CMD;
     flashXfer.data          = &id;
-    flashXfer.dataSize      = 3;
-*/
+    flashXfer.dataSize      = 2;
+
     do
     {
-        status = flexspi_command_xfer(base, &flashXfer);
-        //status = flexspi_command_xfer2(base, &flashXfer);
+        //status = flexspi_command_xfer(base, &flashXfer);
+        status = flexspi_command_xfer2(base, &flashXfer);
         if (status != kStatus_Success)
         {
             break;
