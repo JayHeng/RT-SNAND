@@ -753,6 +753,60 @@ status_t flexspi_device_cmd_config_all_chips(FLEXSPI_Type *base, flexspi_mem_con
     return status;
 }
 
+/* Common FlexSPI config */
+flexspi_device_config_t g_deviceconfig = {
+    .flexspiRootClk       = 27400000,
+    .flashSize            = 0x4000, /* 128Mb/KByte */
+    .CSIntervalUnit       = kFLEXSPI_CsIntervalUnit1SckCycle,
+    .CSInterval           = 2,
+    .CSHoldTime           = 3,
+    .CSSetupTime          = 3,
+    .dataValidTime        = 2,
+    .columnspace          = 0,
+    .enableWordAddress    = 0,
+    .AHBWriteWaitUnit     = kFLEXSPI_AhbWriteWaitUnit2AhbCycle,
+    .AHBWriteWaitInterval = 0,
+};
+
+status_t flexspi_init2(FLEXSPI_Type *base, flexspi_mem_config_t *memConfig)
+{
+    flexspi_config_t config;
+
+    /*Get FLEXSPI default settings and configure the flexspi. */
+    FLEXSPI_GetDefaultConfig(&config);
+
+    /*Set AHB buffer size for reading data through AHB bus. */
+    config.ahbConfig.enableAHBPrefetch = true;
+    config.rxSampleClock               = (flexspi_read_sample_clock_t)memConfig->readSampleClkSrc;
+#if !(defined(FSL_FEATURE_FLEXSPI_HAS_NO_MCR0_COMBINATIONEN) && FSL_FEATURE_FLEXSPI_HAS_NO_MCR0_COMBINATIONEN)
+    flexspi_port_t port = EXAMPLE_MIXSPI_PORT;
+    if ((port == kFLEXSPI_PortA1) || (port == kFLEXSPI_PortA2))
+    {
+        config.enableCombination = true;
+    }
+    else
+    {
+        config.enableCombination = false;
+    }
+#endif
+    config.ahbConfig.enableAHBBufferable = true;
+    config.ahbConfig.enableAHBCachable   = true;
+
+    FLEXSPI_Init(base, &config);
+
+    /* Configure flash settings according to serial flash feature. */
+    FLEXSPI_SetFlashConfig(base, &g_deviceconfig, EXAMPLE_MIXSPI_PORT);
+
+    /* Do software reset. */
+    FLEXSPI_SoftwareReset(base);
+
+#if defined(EXAMPLE_INVALIDATE_FLEXSPI_CACHE)
+    EXAMPLE_INVALIDATE_FLEXSPI_CACHE();
+#endif
+    
+    return kStatus_Success;
+}
+
 status_t flexspi_init(FLEXSPI_Type *base, flexspi_mem_config_t *config)
 {
     uint32_t mcr0;
@@ -823,6 +877,13 @@ status_t flexspi_init(FLEXSPI_Type *base, flexspi_mem_config_t *config)
                             | FLEXSPI_MCR0_ARDFEN_MASK
 #endif
                );
+
+#if defined(FLEXSPI_MCR0_DOZEEN_MASK)
+        mcr0 |= FLEXSPI_MCR0_DOZEEN_MASK;
+#endif
+#if defined(FLEXSPI_MCR0_LEARNEN_MASK)
+        mcr0 &= ~FLEXSPI_MCR0_LEARNEN_MASK;
+#endif
 
 #if FLEXSPI_ENABLE_NO_CMD_MODE_SUPPORT
         // If this condition meets, it means FlexSPI PORT B exists, the the 8 bit is supported by combining PORTA[3:0]

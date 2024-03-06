@@ -198,6 +198,7 @@ extern "C"
 #endif
 
     //!@brief Initialize FlexSPI
+    status_t flexspi_init2(FLEXSPI_Type *base, flexspi_mem_config_t *config);
     status_t flexspi_init(FLEXSPI_Type *base, flexspi_mem_config_t *config);
 
     //!@brief Send Write enable command to Serial Memory device
