@@ -184,8 +184,8 @@ status_t flexspi_nand_init(FLEXSPI_Type *base, flexspi_nand_config_t *config)
         {
             break;
         }
-        //status = flexspi_init(base, &config->memConfig);
-        status = flexspi_init2(base, &config->memConfig);
+        status = flexspi_init(base, &config->memConfig);
+        //status = flexspi_init2(base, &config->memConfig);
         if (status != kStatus_Success)
         {
             break;
@@ -519,7 +519,7 @@ status_t flexspi_nand_verify_id(FLEXSPI_Type *base, serial_nand_config_option_t 
 {
     status_t status = kStatus_InvalidArgument;
     uint32_t id = 0;
-/*
+
     flexspi_xfer_t flashXfer;
     flashXfer.baseAddress = 0;
     flashXfer.isParallelModeEnable = false;
@@ -528,8 +528,8 @@ status_t flexspi_nand_verify_id(FLEXSPI_Type *base, serial_nand_config_option_t 
     flashXfer.rxSize = 2;
     flashXfer.seqId = NAND_CMD_LUT_FOR_IP_CMD;
     flashXfer.seqNum = 1;
-*/
 
+/*
     flexspi_transfer_t flashXfer;
     flashXfer.deviceAddress = 0;
     flashXfer.port          = EXAMPLE_MIXSPI_PORT;
@@ -538,11 +538,11 @@ status_t flexspi_nand_verify_id(FLEXSPI_Type *base, serial_nand_config_option_t 
     flashXfer.seqIndex      = NAND_CMD_LUT_FOR_IP_CMD;
     flashXfer.data          = &id;
     flashXfer.dataSize      = 2;
-
+*/
     do
     {
-        //status = flexspi_command_xfer(base, &flashXfer);
-        status = flexspi_command_xfer2(base, &flashXfer);
+        status = flexspi_command_xfer(base, &flashXfer);
+        //status = flexspi_command_xfer2(base, &flashXfer);
         if (status != kStatus_Success)
         {
             break;
@@ -593,7 +593,26 @@ status_t flexspi_nand_get_config(FLEXSPI_Type *base, flexspi_nand_config_t *conf
         config->memConfig.sflashPadType = kFLEXSPI_4PAD;
         config->memConfig.readSampleClkSrc = kFLEXSPI_ReadSampleClkLoopbackInternally;
         config->memConfig.serialClkFreq = kFlexSpiSerialClk_SafeFreq;
-        config->memConfig.sflashA1Size = 128U * 1024 * 1024 * 2; // Default size: 1Gbit
+        
+        flexspi_port_t thisPort = EXAMPLE_MIXSPI_PORT;
+        switch (thisPort)
+        {
+            case kFLEXSPI_PortA2:
+                config->memConfig.sflashA2Size = 128U * 1024 * 1024 * 2; // Default size: 1Gbit
+                break;
+#if !((defined(FSL_FEATURE_FLEXSPI_NO_SUPPORT_PORTB)) && (FSL_FEATURE_FLEXSPI_NO_SUPPORT_PORTB))
+            case kFLEXSPI_PortB1:
+                config->memConfig.sflashB1Size = 128U * 1024 * 1024 * 2; // Default size: 1Gbit
+                break;
+            case kFLEXSPI_PortB2:
+                config->memConfig.sflashB2Size = 128U * 1024 * 1024 * 2; // Default size: 1Gbit
+                break;
+#endif
+            case kFLEXSPI_PortA1:
+            default:
+                config->memConfig.sflashA1Size = 128U * 1024 * 1024 * 2; // Default size: 1Gbit
+                break;
+        }
 
         if (option->option0.B.option_size > 0)
         {
@@ -636,8 +655,8 @@ status_t flexspi_nand_get_config(FLEXSPI_Type *base, flexspi_nand_config_t *conf
         // Generate Read ID sequence
         uint32_t readIdSeq[4];
         memset(readIdSeq, 0, sizeof(readIdSeq));
-        readIdSeq[0] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, kSerialNandCmd_ReadId, kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x0),
-        readIdSeq[1] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x02, kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0);
+        readIdSeq[0] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR,      kFLEXSPI_1PAD, kSerialNandCmd_ReadId, kFLEXSPI_Command_DUMMY_SDR,  kFLEXSPI_1PAD, 0x8),
+        readIdSeq[1] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x02,                  kFLEXSPI_Command_STOP,       kFLEXSPI_1PAD, 0);
         flexspi_update_lut(base, NAND_CMD_LUT_FOR_IP_CMD, readIdSeq, 1);
 
         // Probe device presence by verifying Manufacturer ID
