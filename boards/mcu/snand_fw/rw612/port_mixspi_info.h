@@ -149,13 +149,29 @@ static void mixspi_clock_gate_disable(FLEXSPI_Type *base)
     CLOCK_DisableClock(kCLOCK_Flexspi);
 }
 
+static bool is_mixspi_clock_enabled(FLEXSPI_Type *base)
+{
+    if (base == FLEXSPI)
+    {
+        if (CLKCTL0->PSCCTL0 & CLKCTL0_PSCCTL0_FLEXSPI0_MASK)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    return false;
+}
+
 static void mixspi_clock_init(FLEXSPI_Type *base, mixspi_root_clk_freq_t clkFreq)
 {
     if (base == FLEXSPI)
     {
         CLOCK_EnableClock(kCLOCK_Flexspi);
         RESET_ClearPeripheralReset(kFLEXSPI_RST_SHIFT_RSTn);
-
         if (clkFreq == kMixspiRootClkFreq_30MHz)
         {
             /* Move FLEXSPI clock source to T3 256m / 8 to avoid instruction/data fetch issue in XIP when

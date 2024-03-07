@@ -367,6 +367,23 @@ static void mixspi_clock_gate_disable(FLEXSPI_Type *base)
     CLOCK_DisableClock(kCLOCK_Flexspi);
 }
 
+static bool is_mixspi_clock_enabled(FLEXSPI_Type *base)
+{
+    if (base == FLEXSPI)
+    {
+        if (CLKCTL0->PSCCTL0 & CLKCTL0_PSCCTL0_FLEXSPI_OTFAD_CLK_MASK)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    return false;
+}
+
 static void mixspi_clock_init(FLEXSPI_Type *base, mixspi_root_clk_freq_t clkFreq)
 {
     if (base == FLEXSPI)
