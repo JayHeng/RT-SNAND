@@ -54,7 +54,7 @@ void snand_main(void)
 
     serial_nand_config_option_t nandOpt = 
     {
-        .option0.U = 0xc1010026,
+        .option0.U = 0xc1010021,
         .option1.U = 0x000000ef,
     };
     

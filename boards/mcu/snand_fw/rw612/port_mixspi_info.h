@@ -174,10 +174,8 @@ static void mixspi_clock_init(FLEXSPI_Type *base, mixspi_root_clk_freq_t clkFreq
         RESET_ClearPeripheralReset(kFLEXSPI_RST_SHIFT_RSTn);
         if (clkFreq == kMixspiRootClkFreq_30MHz)
         {
-            /* Move FLEXSPI clock source to T3 256m / 8 to avoid instruction/data fetch issue in XIP when
-             * updating PLL and main clock.
-             */
-            BOARD_SetFlexspiClock(FLEXSPI, 6U, 8U);
+            /* Move FLEXSPI clock source to AUX0_PLL£¨260MHz£©, divide by 10 */
+            BOARD_SetFlexspiClock(FLEXSPI, 2U, 10U);
         }
         else if (clkFreq == kMixspiRootClkFreq_50MHz)
         {

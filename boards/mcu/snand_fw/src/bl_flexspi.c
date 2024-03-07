@@ -772,6 +772,8 @@ status_t flexspi_init2(FLEXSPI_Type *base, flexspi_mem_config_t *memConfig)
 {
     flexspi_config_t config;
 
+    mixspi_clock_init(base, kMixspiRootClkFreq_30MHz);
+
     /*Get FLEXSPI default settings and configure the flexspi. */
     FLEXSPI_GetDefaultConfig(&config);
 
