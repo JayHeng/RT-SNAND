@@ -191,7 +191,16 @@ status_t flexspi_nand_init(FLEXSPI_Type *base, flexspi_nand_config_t *config)
             break;
         }
         // Configure Lookup table for read
-        flexspi_update_lut(base, 0, config->memConfig.lookupTable, 1);
+        uint32_t readIndex = 0;
+        if (config->memConfig.lutCustomSeqEnable)
+        {
+            readIndex = NAND_CMD_INDEX_READCHACHE;
+        }
+        else
+        {
+            readIndex = NAND_CMD_LUT_SEQ_IDX_READCACHE;
+        }
+        flexspi_update_lut(base, readIndex, &config->memConfig.lookupTable[readIndex*4], 1);
     } while (0);
 
     return status;
@@ -803,30 +812,30 @@ status_t flexspi_nand_get_config(FLEXSPI_Type *base, flexspi_nand_config_t *conf
             config->memConfig.deviceModeCfgEnable = true;
             config->memConfig.deviceModeType = kDeviceConfigCmdType_Spi2Xpi;
             config->memConfig.deviceModeArg = 0xE7; // Octal DDR mode
-            config->memConfig.deviceModeSeq.seqId = 7;
+            config->memConfig.deviceModeSeq.seqId = NAND_CMD_LUT_SEQ_IDX_USERDEFN3;
             config->memConfig.deviceModeSeq.seqNum = 2;
             config->memConfig.waitTimeCfgCommands = 1;
 
             // Write enable
-            config->memConfig.lookupTable[4 * 7 + 0] =
+            config->memConfig.lookupTable[4 * NAND_CMD_LUT_SEQ_IDX_USERDEFN3 + 0] =
                 FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x06, kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0);
             // Write Volatile register
-            config->memConfig.lookupTable[4 * 8 + 0] =
+            config->memConfig.lookupTable[4 * NAND_CMD_LUT_SEQ_IDX_USERDEFN4 + 0] =
                 FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x81, kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x00);
-            config->memConfig.lookupTable[4 * 8 + 1] =
+            config->memConfig.lookupTable[4 * NAND_CMD_LUT_SEQ_IDX_USERDEFN4 + 1] =
                 FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x00, kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x00);
-            config->memConfig.lookupTable[4 * 8 + 2] =
+            config->memConfig.lookupTable[4 * NAND_CMD_LUT_SEQ_IDX_USERDEFN4 + 2] =
                 FLEXSPI_LUT_SEQ(kFLEXSPI_Command_WRITE_SDR, kFLEXSPI_1PAD, 0x1, kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0);
 
             // Enable Command Configuration
             config->memConfig.configCmdEnable = true;
 
             // Disable All protection bits
-            config->memConfig.configCmdSeqs[0].seqId = 2;
+            config->memConfig.configCmdSeqs[0].seqId = NAND_CMD_LUT_SEQ_IDX_USERDEFN1;
             config->memConfig.configCmdSeqs[0].seqNum = 1;
-            config->memConfig.lookupTable[4 * 2 + 0] =
+            config->memConfig.lookupTable[4 * NAND_CMD_LUT_SEQ_IDX_USERDEFN1 + 0] =
                 FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_8PAD, 0x1F, kFLEXSPI_Command_SDR, kFLEXSPI_8PAD, 0xA0);
-            config->memConfig.lookupTable[4 * 2 + 1] =
+            config->memConfig.lookupTable[4 * NAND_CMD_LUT_SEQ_IDX_USERDEFN1 + 1] =
                 FLEXSPI_LUT_SEQ(kFLEXSPI_Command_WRITE_DDR, kFLEXSPI_8PAD, 0x01, kFLEXSPI_Command_STOP, kFLEXSPI_8PAD, 0);
             config->memConfig.configCmdArgs[0] = 0;
 
@@ -834,11 +843,11 @@ status_t flexspi_nand_get_config(FLEXSPI_Type *base, flexspi_nand_config_t *conf
             // Note: ECC is bit4, shared by all vendors
             //       BUF is bit3, only supported by Winbond
             //       QE  is bit0, only supported by Macronix
-            config->memConfig.configCmdSeqs[1].seqId = 6;
+            config->memConfig.configCmdSeqs[1].seqId = NAND_CMD_LUT_SEQ_IDX_USERDEFN2;
             config->memConfig.configCmdSeqs[1].seqNum = 1;
-            config->memConfig.lookupTable[4 * 6 + 0] =
+            config->memConfig.lookupTable[4 * NAND_CMD_LUT_SEQ_IDX_USERDEFN2 + 0] =
                 FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_8PAD, 0x1F, kFLEXSPI_Command_SDR, kFLEXSPI_8PAD, 0xB0);
-            config->memConfig.lookupTable[4 * 6 + 1] =
+            config->memConfig.lookupTable[4 * NAND_CMD_LUT_SEQ_IDX_USERDEFN2 + 1] =
                 FLEXSPI_LUT_SEQ(kFLEXSPI_Command_WRITE_DDR, kFLEXSPI_8PAD, 0x01, kFLEXSPI_Command_STOP, kFLEXSPI_8PAD, 0);
             config->memConfig.configCmdArgs[1] = 0x19;
         }
@@ -907,11 +916,11 @@ status_t flexspi_nand_get_config(FLEXSPI_Type *base, flexspi_nand_config_t *conf
             config->memConfig.configCmdEnable = true;
 
             // Disable All protection bits
-            config->memConfig.configCmdSeqs[0].seqId = 2;
+            config->memConfig.configCmdSeqs[0].seqId = NAND_CMD_LUT_SEQ_IDX_USERDEFN1;
             config->memConfig.configCmdSeqs[0].seqNum = 1;
-            config->memConfig.lookupTable[4 * 2 + 0] =
+            config->memConfig.lookupTable[4 * NAND_CMD_LUT_SEQ_IDX_USERDEFN1 + 0] =
                 FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x1F, kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0xA0);
-            config->memConfig.lookupTable[4 * 2 + 1] =
+            config->memConfig.lookupTable[4 * NAND_CMD_LUT_SEQ_IDX_USERDEFN1 + 1] =
                 FLEXSPI_LUT_SEQ(kFLEXSPI_Command_WRITE_SDR, kFLEXSPI_1PAD, 0x01, kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0);
             config->memConfig.configCmdArgs[0] = 0;
 
@@ -919,11 +928,11 @@ status_t flexspi_nand_get_config(FLEXSPI_Type *base, flexspi_nand_config_t *conf
             // Note: ECC is bit4, shared by all vendors
             //       BUF is bit3, only supported by Winbond
             //       QE  is bit0, only supported by Macronix
-            config->memConfig.configCmdSeqs[1].seqId = 6;
+            config->memConfig.configCmdSeqs[1].seqId = NAND_CMD_LUT_SEQ_IDX_USERDEFN2;
             config->memConfig.configCmdSeqs[1].seqNum = 1;
-            config->memConfig.lookupTable[4 * 6 + 0] =
+            config->memConfig.lookupTable[4 * NAND_CMD_LUT_SEQ_IDX_USERDEFN2 + 0] =
                 FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x1F, kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0xB0);
-            config->memConfig.lookupTable[4 * 6 + 1] =
+            config->memConfig.lookupTable[4 * NAND_CMD_LUT_SEQ_IDX_USERDEFN2 + 1] =
                 FLEXSPI_LUT_SEQ(kFLEXSPI_Command_WRITE_SDR, kFLEXSPI_1PAD, 0x01, kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0);
             config->memConfig.configCmdArgs[1] = 0x19;
         }
