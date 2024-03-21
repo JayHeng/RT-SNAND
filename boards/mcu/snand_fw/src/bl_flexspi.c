@@ -1135,8 +1135,26 @@ status_t flexspi_update_lut(FLEXSPI_Type *base, uint32_t seqIndex, const uint32_
     return status;
 }
 
+static uint32_t flexspi_get_current_base_addr(FLEXSPI_Type *base)
+{
+    uint32_t flashSize = 0;
+
+    if (base == NULL)
+    {
+        return 0;
+    }
+
+    for (uint8_t index = 0; index < (uint8_t)EXAMPLE_MIXSPI_PORT; index++)
+    {
+        flashSize += base->FLSHCR0[index] * 1024;
+    }
+    
+    return flashSize;
+}
+
 status_t flexspi_command_xfer2(FLEXSPI_Type *base, flexspi_transfer_t *xfer)
 {
+    xfer->deviceAddress += flexspi_get_current_base_addr(base);
     status_t status = FLEXSPI_TransferBlocking(base, xfer);
 
     flexspi_clear_cache(base);
@@ -1173,7 +1191,7 @@ status_t flexspi_command_xfer(FLEXSPI_Type *base, flexspi_xfer_t *xfer)
         flexspi_clear_error_status(base);
 
         // Configure base address
-        base->IPCR0 = xfer->baseAddress;
+        base->IPCR0 = xfer->baseAddress + flexspi_get_current_base_addr(base);
 
         if (xfer->operation == kFlexSpiOperation_Write)
         {
