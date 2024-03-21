@@ -522,7 +522,12 @@ void BOARD_ClockPostConfig(void)
     if (BOARD_IS_XIP())
     {
         /* Call function BOARD_SetFlexspiClock() to set clock source to aux0_pll_clk. */
+#if defined(XIP_FLASH_TO_ACCESS_NAND)
+        // 33MHz only
+        BOARD_SetFlexspiClock(FLEXSPI, 2U, 8U);
+#else
         BOARD_SetFlexspiClock(FLEXSPI, 2U, 2U);
+#endif
     }
     else
     {

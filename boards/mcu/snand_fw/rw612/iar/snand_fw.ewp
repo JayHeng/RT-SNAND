@@ -1175,7 +1175,7 @@
                 </option>
                 <option>
                     <name>RTDescription</name>
-                    <state>0</state>
+                    <state>A compact configuration of the C/C++14 runtime library. No locale interface, C locale, no file descriptor support, no multibytes in printf and scanf, and no hex floats in strtod.</state>
                 </option>
                 <option>
                     <name>OGProductVersion</name>
@@ -1212,7 +1212,7 @@
                 <option>
                     <name>GBECoreSlave</name>
                     <version>33</version>
-                    <state>58</state>
+                    <state>61</state>
                 </option>
                 <option>
                     <name>OGUseCmsis</name>
@@ -1343,6 +1343,7 @@
                     <state>DEBUG</state>
                     <state>FSL_SDK_DRIVER_QUICK_ACCESS_ENABLE=1</state>
                     <state>BOOT_HEADER_ENABLE=1</state>
+                    <state>XIP_FLASH_TO_ACCESS_NAND</state>
                     <state>CPU_RW612ETA1I</state>
                     <state>MCUXPRESSO_SDK</state>
                 </option>
@@ -2141,7 +2142,7 @@
                 </option>
                 <option>
                     <name>IlinkTrustzoneImportLibraryOut</name>
-                    <state>###Unitialized###</state>
+                    <state>snand_fw_import_lib.o</state>
                 </option>
                 <option>
                     <name>OILinkExtraOption</name>

@@ -441,6 +441,12 @@ status_t flexspi_config_flash_control_registers(FLEXSPI_Type *base, flexspi_mem_
         {
             // Configure FLSHCR0
             flashSize = *flashSizeStart++;
+#if defined(XIP_FLASH_TO_ACCESS_NAND)
+            if (!flashSize)
+            {
+                continue;
+            }
+#endif
             base->FLSHCR0[index] = flashSize / 1024;
 
             // Configure FLSHCR1
@@ -809,6 +815,7 @@ status_t flexspi_init2(FLEXSPI_Type *base, flexspi_mem_config_t *memConfig)
     return kStatus_Success;
 }
 
+#if !defined(XIP_FLASH_TO_ACCESS_NAND)
 status_t flexspi_init(FLEXSPI_Type *base, flexspi_mem_config_t *config)
 {
     uint32_t mcr0;
@@ -885,10 +892,10 @@ status_t flexspi_init(FLEXSPI_Type *base, flexspi_mem_config_t *config)
                );
 
 #if defined(FLEXSPI_MCR0_DOZEEN_MASK)
-        mcr0 |= FLEXSPI_MCR0_DOZEEN_MASK;
+        //mcr0 |= FLEXSPI_MCR0_DOZEEN_MASK;
 #endif
 #if defined(FLEXSPI_MCR0_LEARNEN_MASK)
-        mcr0 &= ~FLEXSPI_MCR0_LEARNEN_MASK;
+        //mcr0 &= ~FLEXSPI_MCR0_LEARNEN_MASK;
 #endif
 
 #if FLEXSPI_ENABLE_NO_CMD_MODE_SUPPORT
@@ -909,7 +916,11 @@ status_t flexspi_init(FLEXSPI_Type *base, flexspi_mem_config_t *config)
         // Configure AHBGRANTWAIT and IPGRANTWAIT
         mcr0 |= FLEXSPI_MCR0_IPGRANTWAIT_MASK | FLEXSPI_MCR0_AHBGRANTWAIT_MASK;
         // Configure Read sample clock source
-        mcr0 |= FLEXSPI_MCR0_RXCLKSRC(config->readSampleClkSrc);
+        flexspi_port_t thisPort = EXAMPLE_MIXSPI_PORT;
+        if ((thisPort == kFLEXSPI_PortA1) || (thisPort == kFLEXSPI_PortA2))
+        {
+            mcr0 |= FLEXSPI_MCR0_RXCLKSRC(config->readSampleClkSrc);
+        }
         base->MCR0 = mcr0;
 
 #if FLEXSPI_ENABLE_NO_CMD_MODE_SUPPORT
@@ -932,6 +943,19 @@ status_t flexspi_init(FLEXSPI_Type *base, flexspi_mem_config_t *config)
             }
         }
 #endif
+        if ((thisPort == kFLEXSPI_PortB1) || (thisPort == kFLEXSPI_PortB2))
+        {
+            uint32_t configValue = base->MCR2;
+            configValue |= 
+#if defined(FSL_FEATURE_FLEXSPI_SUPPORT_SEPERATE_RXCLKSRC_PORTB) && FSL_FEATURE_FLEXSPI_SUPPORT_SEPERATE_RXCLKSRC_PORTB
+                           FLEXSPI_MCR2_RXCLKSRC_B(config->readSampleClkSrc) |
+#endif
+#if defined(FSL_FEATURE_FLEXSPI_SUPPORT_RXCLKSRC_DIFF) && FSL_FEATURE_FLEXSPI_SUPPORT_RXCLKSRC_DIFF
+                           FLEXSPI_MCR2_RX_CLK_SRC_DIFF(1) |
+#endif
+                           0x0;
+            base->MCR2 = configValue;
+        }
 
         // Configure AHB buffer
         flexspi_config_ahb_buffers(base, config);
@@ -998,6 +1022,79 @@ status_t flexspi_init(FLEXSPI_Type *base, flexspi_mem_config_t *config)
 
     return status;
 }
+#else
+status_t flexspi_init(FLEXSPI_Type *base, flexspi_mem_config_t *config)
+{
+    status_t status = kStatus_InvalidArgument;
+
+    do
+    {
+        if ((base == NULL) || (config == NULL))
+        {
+            break;
+        }
+
+        // Configure MCR2
+        base->MCR2 &= ~FLEXSPI_MCR2_SAMEDEVICEEN_MASK;
+
+#if FLEXSPI_ENABLE_NO_CMD_MODE_SUPPORT && FLEXSPI_MCR2_SCKBDIFFOPT_MASK
+        // If this condition meets, it means FlexSPI PORT B exists, SCKB pads used as PORTB SCK with be used a inverted
+        // SCK for PORTA
+        // Enable differential clock as needed.
+        if ((sizeof(base->FLSHCR1) / sizeof(base->FLSHCR1[0])) > 2)
+        {
+            if (flexspi_is_differential_clock_enable(config))
+            {
+                base->MCR2 |= FLEXSPI_MCR2_SCKBDIFFOPT_MASK;
+            }
+        }
+#endif
+        flexspi_port_t thisPort = EXAMPLE_MIXSPI_PORT;
+        if ((thisPort == kFLEXSPI_PortB1) || (thisPort == kFLEXSPI_PortB2))
+        {
+            uint32_t configValue = base->MCR2;
+            configValue |= 
+#if defined(FSL_FEATURE_FLEXSPI_SUPPORT_SEPERATE_RXCLKSRC_PORTB) && FSL_FEATURE_FLEXSPI_SUPPORT_SEPERATE_RXCLKSRC_PORTB
+                           FLEXSPI_MCR2_RXCLKSRC_B(config->readSampleClkSrc) |
+#endif
+#if defined(FSL_FEATURE_FLEXSPI_SUPPORT_RXCLKSRC_DIFF) && FSL_FEATURE_FLEXSPI_SUPPORT_RXCLKSRC_DIFF
+                           FLEXSPI_MCR2_RX_CLK_SRC_DIFF(1) |
+#endif
+                           0x0;
+            base->MCR2 = configValue;
+        }
+
+        // Configure Flash related control registers
+        flexspi_config_flash_control_registers(base, config);
+
+        // Configure DLLCR
+        flexspi_configure_dll(base, config);
+
+        if (config->deviceModeCfgEnable)
+        {
+            status = flexspi_device_workmode_config_all_chips(base, config);
+            if (status != kStatus_Success)
+            {
+                break;
+            }
+        }
+
+        if (config->configCmdEnable)
+        {
+            status = flexspi_device_cmd_config_all_chips(base, config);
+            if (status != kStatus_Success)
+            {
+                break;
+            }
+        }
+
+        status = kStatus_Success;
+
+    } while (0);
+
+    return status;
+}
+#endif // !defined(XIP_FLASH_TO_ACCESS_NAND)
 
 status_t flexspi_update_lut(FLEXSPI_Type *base, uint32_t seqIndex, const uint32_t *lutBase, uint32_t seqNumber)
 {

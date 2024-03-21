@@ -600,7 +600,7 @@ status_t flexspi_nand_get_config(FLEXSPI_Type *base, flexspi_nand_config_t *conf
         config->memConfig.csSetupTime = 3;
         config->memConfig.commandInterval = 50;
         config->memConfig.sflashPadType = kFLEXSPI_4PAD;
-        config->memConfig.readSampleClkSrc = kFLEXSPI_ReadSampleClkLoopbackInternally;
+        config->memConfig.readSampleClkSrc = kFLEXSPI_ReadSampleClkLoopbackFromDqsPad;
         config->memConfig.serialClkFreq = kFlexSpiSerialClk_SafeFreq;
         
         flexspi_port_t thisPort = EXAMPLE_MIXSPI_PORT;
