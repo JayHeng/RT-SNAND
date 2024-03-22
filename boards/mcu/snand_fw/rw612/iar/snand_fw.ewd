@@ -3266,7 +3266,7 @@
                 </option>
                 <option>
                     <name>MemFile</name>
-                    <state>$TOOLKIT_DIR$\CONFIG\debugger\Freescale\MK70FN1M0xxx12.ddf</state>
+                    <state>$TOOLKIT_DIR$\config\debugger\NXP\RW612.ddf</state>
                 </option>
                 <option>
                     <name>RunToEnable</name>
@@ -3306,11 +3306,11 @@
                 </option>
                 <option>
                     <name>OCDynDriverList</name>
-                    <state>CMSISDAP_ID</state>
+                    <state>JLINK_ID</state>
                 </option>
                 <option>
                     <name>OCLastSavedByProductVersion</name>
-                    <state>7.10.1.6733</state>
+                    <state>9.40.2.67586</state>
                 </option>
                 <option>
                     <name>UseFlashLoader</name>
@@ -3334,7 +3334,7 @@
                 </option>
                 <option>
                     <name>FlashLoadersV3</name>
-                    <state>$TOOLKIT_DIR$\config\flashloader\Freescale\FlashK70Fxxx128K.board</state>
+                    <state>$TOOLKIT_DIR$/config/flashloader/NXP/FlashRDRW610_FLEXSPI.board</state>
                 </option>
                 <option>
                     <name>OCImagesSuppressCheck1</name>
@@ -3554,7 +3554,7 @@
                 <option>
                     <name>CMSISDAPResetList</name>
                     <version>1</version>
-                    <state>5</state>
+                    <state>4</state>
                 </option>
                 <option>
                     <name>CMSISDAPHWResetDuration</name>
@@ -4178,7 +4178,7 @@
                 <option>
                     <name>CCJLinkResetList</name>
                     <version>6</version>
-                    <state>5</state>
+                    <state>7</state>
                 </option>
                 <option>
                     <name>CCJLinkInterfaceCmdLine</name>
@@ -4877,7 +4877,7 @@
                 </option>
                 <option>
                     <name>MemFile</name>
-                    <state>$TOOLKIT_DIR$\CONFIG\debugger\Freescale\MK70FN1M0xxx12.ddf</state>
+                    <state>$TOOLKIT_DIR$\config\debugger\NXP\RW612.ddf</state>
                 </option>
                 <option>
                     <name>RunToEnable</name>
@@ -4917,11 +4917,11 @@
                 </option>
                 <option>
                     <name>OCDynDriverList</name>
-                    <state>CMSISDAP_ID</state>
+                    <state>JLINK_ID</state>
                 </option>
                 <option>
                     <name>OCLastSavedByProductVersion</name>
-                    <state>7.10.1.6733</state>
+                    <state>9.40.2.67586</state>
                 </option>
                 <option>
                     <name>UseFlashLoader</name>
@@ -4945,7 +4945,7 @@
                 </option>
                 <option>
                     <name>FlashLoadersV3</name>
-                    <state>$TOOLKIT_DIR$\config\flashloader\Freescale\FlashK70Fxxx128K.board</state>
+                    <state>$TOOLKIT_DIR$/config/flashloader/NXP/FlashRDRW610_FLEXSPI.board</state>
                 </option>
                 <option>
                     <name>OCImagesSuppressCheck1</name>
@@ -5165,7 +5165,7 @@
                 <option>
                     <name>CMSISDAPResetList</name>
                     <version>1</version>
-                    <state>5</state>
+                    <state>4</state>
                 </option>
                 <option>
                     <name>CMSISDAPHWResetDuration</name>
@@ -5789,7 +5789,7 @@
                 <option>
                     <name>CCJLinkResetList</name>
                     <version>6</version>
-                    <state>5</state>
+                    <state>7</state>
                 </option>
                 <option>
                     <name>CCJLinkInterfaceCmdLine</name>

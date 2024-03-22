@@ -709,7 +709,7 @@
             <data>
                 <extensions></extensions>
                 <cmdline></cmdline>
-                <hasPrio>0</hasPrio>
+                <hasPrio>16</hasPrio>
                 <buildSequence>inputOutputBased</buildSequence>
             </data>
         </settings>
@@ -730,7 +730,7 @@
                 </option>
                 <option>
                     <name>IlinkOutputFile</name>
-                    <state>hello_world.out</state>
+                    <state>snand_fw.out</state>
                 </option>
                 <option>
                     <name>IlinkDebugInfoEnable</name>
@@ -2290,7 +2290,7 @@
                 </option>
                 <option>
                     <name>RTDescription</name>
-                    <state>0</state>
+                    <state>A compact configuration of the C/C++14 runtime library. No locale interface, C locale, no file descriptor support, no multibytes in printf and scanf, and no hex floats in strtod.</state>
                 </option>
                 <option>
                     <name>OGProductVersion</name>
@@ -2327,7 +2327,7 @@
                 <option>
                     <name>GBECoreSlave</name>
                     <version>33</version>
-                    <state>58</state>
+                    <state>61</state>
                 </option>
                 <option>
                     <name>OGUseCmsis</name>
@@ -2523,7 +2523,7 @@
                 </option>
                 <option>
                     <name>CCDebugInfo</name>
-                    <state>0</state>
+                    <state>1</state>
                 </option>
                 <option>
                     <name>IEndianMode</name>
@@ -2937,7 +2937,7 @@
             <data>
                 <extensions></extensions>
                 <cmdline></cmdline>
-                <hasPrio>0</hasPrio>
+                <hasPrio>160</hasPrio>
                 <buildSequence>inputOutputBased</buildSequence>
             </data>
         </settings>
@@ -2958,7 +2958,7 @@
                 </option>
                 <option>
                     <name>IlinkOutputFile</name>
-                    <state>hello_world.out</state>
+                    <state>snand_fw.out</state>
                 </option>
                 <option>
                     <name>IlinkDebugInfoEnable</name>
@@ -3255,7 +3255,7 @@
                 </option>
                 <option>
                     <name>IlinkTrustzoneImportLibraryOut</name>
-                    <state>###Unitialized###</state>
+                    <state>snand_fw_import_lib.o</state>
                 </option>
                 <option>
                     <name>OILinkExtraOption</name>
@@ -3403,7 +3403,7 @@
                 </option>
                 <option>
                     <name>RTDescription</name>
-                    <state>0</state>
+                    <state>A compact configuration of the C/C++14 runtime library. No locale interface, C locale, no file descriptor support, no multibytes in printf and scanf, and no hex floats in strtod.</state>
                 </option>
                 <option>
                     <name>OGProductVersion</name>
@@ -3440,7 +3440,7 @@
                 <option>
                     <name>GBECoreSlave</name>
                     <version>33</version>
-                    <state>58</state>
+                    <state>61</state>
                 </option>
                 <option>
                     <name>OGUseCmsis</name>
@@ -3571,6 +3571,7 @@
                     <state>FSL_SDK_DRIVER_QUICK_ACCESS_ENABLE=1</state>
                     <state>BOOT_HEADER_ENABLE=1</state>
                     <state>CPU_RW612ETA1I</state>
+                    <state>XIP_FLASH_TO_ACCESS_NAND</state>
                     <state>NDEBUG</state>
                     <state>MCUXPRESSO_SDK</state>
                 </option>
@@ -3633,11 +3634,11 @@
                 <option>
                     <name>CCAllowList</name>
                     <version>1</version>
-                    <state>11111110</state>
+                    <state>10010100</state>
                 </option>
                 <option>
                     <name>CCDebugInfo</name>
-                    <state>0</state>
+                    <state>1</state>
                 </option>
                 <option>
                     <name>IEndianMode</name>
@@ -3735,7 +3736,7 @@
                 </option>
                 <option>
                     <name>CCOptLevel</name>
-                    <state>3</state>
+                    <state>2</state>
                 </option>
                 <option>
                     <name>CCOptStrategy</name>
@@ -3744,7 +3745,7 @@
                 </option>
                 <option>
                     <name>CCOptLevelSlave</name>
-                    <state>3</state>
+                    <state>2</state>
                 </option>
                 <option>
                     <name>CCPosIndRopi</name>
@@ -4072,7 +4073,7 @@
                 </option>
                 <option>
                     <name>IlinkOutputFile</name>
-                    <state>hello_world.out</state>
+                    <state>snand_fw.out</state>
                 </option>
                 <option>
                     <name>IlinkDebugInfoEnable</name>
@@ -4369,7 +4370,7 @@
                 </option>
                 <option>
                     <name>IlinkTrustzoneImportLibraryOut</name>
-                    <state>###Unitialized###</state>
+                    <state>snand_fw_import_lib.o</state>
                 </option>
                 <option>
                     <name>OILinkExtraOption</name>
