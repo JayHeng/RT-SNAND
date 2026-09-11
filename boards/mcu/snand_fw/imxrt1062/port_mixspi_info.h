@@ -15,6 +15,7 @@
 #include "fsl_iomuxc.h"
 #include "fsl_cache.h"
 #include "fsl_flexspi.h"
+#include "fsl_gpio.h"
 
 /*******************************************************************************
  * Definitions
@@ -27,6 +28,9 @@
 #define EXAMPLE_MIXSPI_PORT             kFLEXSPI_PortB1
 
 #define BOARD_IS_RT1064_FSPI2_SIP       (0)
+
+#define BOARD_IS_RT1060_MT_NGEP_TPS     (1)
+#define BOARD_IS_RT1060_EVK             (0)
 
 /*
  * If cache is enabled, this example should maintain the cache to make sure
@@ -159,20 +163,75 @@ static void mixspi_pin_init(FLEXSPI_Type *base, flexspi_port_t port, flexspi_pad
         }
         else if (port == kFLEXSPI_PortB1)
         {
+#if BOARD_IS_RT1060_MT_NGEP_TPS
+            IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_09_FLEXSPIA_DQS, 1U); 
+            IOMUXC_SetPinMux(IOMUXC_GPIO_SD_B1_05_FLEXSPIB_SS0_B, 1U); 
+            IOMUXC_SetPinConfig(IOMUXC_GPIO_AD_B1_09_FLEXSPIA_DQS, 0x10F1U); 
+            IOMUXC_SetPinConfig(IOMUXC_GPIO_SD_B1_05_FLEXSPIB_SS0_B, 0x10F1U); 
+#elif BOARD_IS_RT1060_EVK
             IOMUXC_SetPinMux(IOMUXC_GPIO_SD_B0_05_FLEXSPIB_DQS, 1U); 
             IOMUXC_SetPinMux(IOMUXC_GPIO_SD_B0_04_FLEXSPIB_SS0_B, 1U); 
+            IOMUXC_SetPinConfig(IOMUXC_GPIO_SD_B0_05_FLEXSPIB_DQS, 0x10F1U); 
+            IOMUXC_SetPinConfig(IOMUXC_GPIO_SD_B0_04_FLEXSPIB_SS0_B, 0x10F1U); 
+#endif
             IOMUXC_SetPinMux(IOMUXC_GPIO_SD_B1_04_FLEXSPIB_SCLK, 1U); 
             IOMUXC_SetPinMux(IOMUXC_GPIO_SD_B1_03_FLEXSPIB_DATA00, 1U); 
             IOMUXC_SetPinMux(IOMUXC_GPIO_SD_B1_02_FLEXSPIB_DATA01, 1U); 
             IOMUXC_SetPinMux(IOMUXC_GPIO_SD_B1_01_FLEXSPIB_DATA02, 1U); 
             IOMUXC_SetPinMux(IOMUXC_GPIO_SD_B1_00_FLEXSPIB_DATA03, 1U); 
-            IOMUXC_SetPinConfig(IOMUXC_GPIO_SD_B0_05_FLEXSPIB_DQS, 0x10F1U); 
-            IOMUXC_SetPinConfig(IOMUXC_GPIO_SD_B0_04_FLEXSPIB_SS0_B, 0x10F1U); 
             IOMUXC_SetPinConfig(IOMUXC_GPIO_SD_B1_04_FLEXSPIB_SCLK, 0x10F1U); 
             IOMUXC_SetPinConfig(IOMUXC_GPIO_SD_B1_03_FLEXSPIB_DATA00, 0x10F1U); 
             IOMUXC_SetPinConfig(IOMUXC_GPIO_SD_B1_02_FLEXSPIB_DATA01, 0x10F1U); 
             IOMUXC_SetPinConfig(IOMUXC_GPIO_SD_B1_01_FLEXSPIB_DATA02, 0x10F1U); 
             IOMUXC_SetPinConfig(IOMUXC_GPIO_SD_B1_00_FLEXSPIB_DATA03, 0x10F1U); 
+            /*
+            gpio_pin_config_t USER_LED_config = {
+                .direction = kGPIO_DigitalOutput,
+                .outputLogic = 0U,
+                .interruptMode = kGPIO_NoIntmode
+            };
+            GPIO_PinInit(GPIO3, 0U, &USER_LED_config);
+            GPIO_PinInit(GPIO3, 1U, &USER_LED_config);
+            GPIO_PinInit(GPIO3, 2U, &USER_LED_config);
+            GPIO_PinInit(GPIO3, 3U, &USER_LED_config);
+            GPIO_PinInit(GPIO3, 4U, &USER_LED_config);
+            GPIO_PinInit(GPIO3, 16U, &USER_LED_config);
+            GPIO_PinInit(GPIO3, 17U, &USER_LED_config);
+
+            IOMUXC_SetPinMux(IOMUXC_GPIO_SD_B0_05_GPIO3_IO17, 0U); 
+            IOMUXC_SetPinMux(IOMUXC_GPIO_SD_B0_04_GPIO3_IO16, 0U); 
+            IOMUXC_SetPinMux(IOMUXC_GPIO_SD_B1_04_GPIO3_IO04, 0U); 
+            IOMUXC_SetPinMux(IOMUXC_GPIO_SD_B1_03_GPIO3_IO03, 0U); 
+            IOMUXC_SetPinMux(IOMUXC_GPIO_SD_B1_02_GPIO3_IO02, 0U); 
+            IOMUXC_SetPinMux(IOMUXC_GPIO_SD_B1_01_GPIO3_IO01, 0U); 
+            IOMUXC_SetPinMux(IOMUXC_GPIO_SD_B1_00_GPIO3_IO00, 0U); 
+            IOMUXC_SetPinConfig(IOMUXC_GPIO_SD_B0_05_GPIO3_IO17, 0x10B0U); 
+            IOMUXC_SetPinConfig(IOMUXC_GPIO_SD_B0_04_GPIO3_IO16, 0x10B0U); 
+            IOMUXC_SetPinConfig(IOMUXC_GPIO_SD_B1_04_GPIO3_IO04, 0x10B0U); 
+            IOMUXC_SetPinConfig(IOMUXC_GPIO_SD_B1_03_GPIO3_IO03, 0x10B0U); 
+            IOMUXC_SetPinConfig(IOMUXC_GPIO_SD_B1_02_GPIO3_IO02, 0x10B0U); 
+            IOMUXC_SetPinConfig(IOMUXC_GPIO_SD_B1_01_GPIO3_IO01, 0x10B0U); 
+            IOMUXC_SetPinConfig(IOMUXC_GPIO_SD_B1_00_GPIO3_IO00, 0x10B0U); 
+            
+            GPIO_PinWrite(GPIO3, 0, 0U);
+            GPIO_PinWrite(GPIO3, 1, 0U);
+            GPIO_PinWrite(GPIO3, 2, 0U);
+            GPIO_PinWrite(GPIO3, 3, 0U);
+            GPIO_PinWrite(GPIO3, 4, 0U);
+            GPIO_PinWrite(GPIO3, 16, 0U);
+            GPIO_PinWrite(GPIO3, 17, 0U);
+            
+            __NOP();
+
+            GPIO_PinWrite(GPIO3, 0, 1U);
+            GPIO_PinWrite(GPIO3, 1, 1U);
+            GPIO_PinWrite(GPIO3, 2, 1U);
+            GPIO_PinWrite(GPIO3, 3, 1U);
+            GPIO_PinWrite(GPIO3, 4, 1U);
+            GPIO_PinWrite(GPIO3, 16, 1U);
+            GPIO_PinWrite(GPIO3, 17, 1U);
+            __NOP();
+           */
         }
     }
     else if (base == FLEXSPI2)

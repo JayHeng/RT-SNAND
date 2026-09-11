@@ -48,6 +48,8 @@ void snand_main(void)
     snand_printf("SNAND: Get CPU root clock.\r\n");
     /* Show CPU clock source */
     cpu_show_clock_source();
+    /* Set FlexSPI clock */
+    //mixspi_clock_init(EXAMPLE_MIXSPI, kMixspiRootClkFreq_50MHz);
     /* Show FlexSPI clock source */
     mixspi_show_clock_source(EXAMPLE_MIXSPI);
 
@@ -56,8 +58,13 @@ void snand_main(void)
 
     serial_nand_config_option_t nandOpt = 
     {
+#if SNAND_TYPE == SNAND_WINBOND_1Gb
         .option0.U = 0xc1010021,
         .option1.U = 0x000000ef,
+#elif SNAND_TYPE == SNAND_ISSI_1Gb
+        .option0.U = 0xc1010021,
+        .option1.U = 0x000000c8,
+#endif
     };
     
     status = spinand_mem_config((uint32_t *)&nandOpt);
